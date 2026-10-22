@@ -52,10 +52,33 @@ function qrApiDevPlugin() {
               bottomTextColor,
             });
 
-            res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+            const format = (params.get('format') || 'png').toLowerCase();
+
+            if (format === 'svg') {
+              res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+              res.setHeader('Access-Control-Allow-Origin', '*');
+              res.setHeader('Cache-Control', 'no-cache');
+              res.end(svg);
+              return;
+            }
+
+            const { Resvg } = await import('@cf-wasm/resvg');
+            const { getFontBuffer } = await import('./functions/api/fontData.js');
+            const fontBuffer = getFontBuffer();
+            const resvg = await Resvg.async(svg, {
+              font: {
+                fontBuffers: [fontBuffer],
+                defaultFontFamily: 'Roboto',
+              },
+            });
+            const pngData = resvg.render();
+            const pngBuffer = pngData.asPng();
+
+            res.setHeader('Content-Type', 'image/png');
+            res.setHeader('Content-Disposition', 'inline; filename="qr-code.png"');
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Cache-Control', 'no-cache');
-            res.end(svg);
+            res.end(Buffer.from(pngBuffer));
             return;
           } catch (err) {
             res.statusCode = 500;

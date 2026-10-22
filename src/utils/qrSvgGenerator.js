@@ -84,13 +84,13 @@ export function generateQrSvg(options = {}) {
   const {
     data = 'https://wajihah-qr-generator.pages.dev/',
     value = data,
-    size = 350,
-    quietZone = 10,
+    size = 400,
+    quietZone = 25,
     ecLevel = 'H',
     fgColor = '#000000',
     bgColor = '#ffffff',
     qrStyle = 'squares',
-    eyeRadius = 10,
+    eyeRadius = 6,
     eyeColor = fgColor,
     logo = null,
     logoImage = logo,
@@ -117,15 +117,15 @@ export function generateQrSvg(options = {}) {
   qr.make();
 
   const length = qr.getModuleCount();
-  const numSize = Number(size) || 350;
-  const numQuietZone = Number(quietZone) >= 0 ? Number(quietZone) : 10;
+  const numSize = Number(size) || 400;
+  const numQuietZone = Math.max(Number(quietZone) >= 0 ? Number(quietZone) : 25, 20);
   const canvasSize = numSize + 2 * numQuietZone;
   const cellSize = numSize / length;
   const offset = numQuietZone;
 
   // Resolve bottom text with multi-line word wrapping
   const cleanBottomText = String(bottomText || label || '').trim();
-  const textFontSize = Math.max(15, Math.round(canvasSize * 0.05));
+  const textFontSize = Math.max(16, Math.round(canvasSize * 0.048));
   const availableWidth = Math.max(100, canvasSize - 28);
   const textLines = cleanBottomText ? wrapTextSvg(cleanBottomText, availableWidth, textFontSize) : [];
   const lineHeight = Math.round(textFontSize * 1.35);
@@ -241,9 +241,9 @@ export function generateQrSvg(options = {}) {
     const centerOffset = cellSize * 2;
     const centerSize = cellSize * 3;
 
-    const rOuter = Math.min(numEyeRadius, eyeSize / 2);
-    const rInner = Math.max(0, rOuter - cellSize);
-    const rCenter = Math.max(0, rOuter - cellSize * 1.5);
+    const rOuter = Math.min(numEyeRadius, cellSize * 0.45, 6);
+    const rInner = Math.max(0, rOuter - (cellSize * 0.4));
+    const rCenter = Math.max(0, rOuter - (cellSize * 0.7));
 
     const outerPath = roundedRectPath(eyeX, eyeY, eyeSize, eyeSize, rOuter);
     const innerCutout = roundedRectPath(eyeX + innerOffset, eyeY + innerOffset, innerSize, innerSize, rInner);
@@ -271,7 +271,7 @@ export function generateQrSvg(options = {}) {
     const startY = canvasSize + topGap + Math.round(textFontSize * 0.82);
     textLines.forEach((line, idx) => {
       const lineY = (startY + (idx * lineHeight)).toFixed(2);
-      svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${lineY}" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.2">${escapeXml(line)}</text>\n`;
+      svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${lineY}" text-anchor="middle" font-family="Roboto, 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.2">${escapeXml(line)}</text>\n`;
     });
   }
 

@@ -1,5 +1,7 @@
 import qrcode from 'qrcode-generator';
 import { resolveLogo } from './logoData.js';
+import { Resvg } from '@cf-wasm/resvg';
+import { getFontBuffer } from './fontData.js';
 
 function utf16to8(str) {
   let out = '', i, c;
@@ -84,13 +86,13 @@ export function generateQrSvg(options = {}) {
   const {
     data = 'https://wajihah-qr-generator.pages.dev/',
     value = data,
-    size = 350,
-    quietZone = 10,
+    size = 400,
+    quietZone = 25,
     ecLevel = 'H',
     fgColor = '#000000',
     bgColor = '#ffffff',
     qrStyle = 'squares',
-    eyeRadius = 10,
+    eyeRadius = 6,
     eyeColor = fgColor,
     logo = null,
     logoImage = logo,
@@ -116,15 +118,15 @@ export function generateQrSvg(options = {}) {
   qr.make();
 
   const length = qr.getModuleCount();
-  const numSize = Number(size) || 350;
-  const numQuietZone = Number(quietZone) >= 0 ? Number(quietZone) : 10;
+  const numSize = Number(size) || 400;
+  const numQuietZone = Math.max(Number(quietZone) >= 0 ? Number(quietZone) : 25, 20);
   const canvasSize = numSize + 2 * numQuietZone;
   const cellSize = numSize / length;
   const offset = numQuietZone;
 
   // Multi-line word wrapped text
   const cleanBottomText = String(bottomText || label || '').trim();
-  const textFontSize = Math.max(15, Math.round(canvasSize * 0.05));
+  const textFontSize = Math.max(16, Math.round(canvasSize * 0.048));
   const availableWidth = Math.max(100, canvasSize - 28);
   const textLines = cleanBottomText ? wrapTextSvg(cleanBottomText, availableWidth, textFontSize) : [];
   const lineHeight = Math.round(textFontSize * 1.35);
@@ -234,9 +236,9 @@ export function generateQrSvg(options = {}) {
     const centerOffset = cellSize * 2;
     const centerSize = cellSize * 3;
 
-    const rOuter = Math.min(numEyeRadius, eyeSize / 2);
-    const rInner = Math.max(0, rOuter - cellSize);
-    const rCenter = Math.max(0, rOuter - cellSize * 1.5);
+    const rOuter = Math.min(numEyeRadius, cellSize * 0.45, 6);
+    const rInner = Math.max(0, rOuter - (cellSize * 0.4));
+    const rCenter = Math.max(0, rOuter - (cellSize * 0.7));
 
     const outerPath = roundedRectPath(eyeX, eyeY, eyeSize, eyeSize, rOuter);
     const innerCutout = roundedRectPath(eyeX + innerOffset, eyeY + innerOffset, innerSize, innerSize, rInner);
@@ -262,7 +264,7 @@ export function generateQrSvg(options = {}) {
     const startY = canvasSize + topGap + Math.round(textFontSize * 0.82);
     textLines.forEach((line, idx) => {
       const lineY = (startY + (idx * lineHeight)).toFixed(2);
-      svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${lineY}" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.2">${escapeXml(line)}</text>\n`;
+      svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${lineY}" text-anchor="middle" font-family="Roboto, 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.2">${escapeXml(line)}</text>\n`;
     });
   }
 
@@ -289,13 +291,13 @@ export async function onRequest(context) {
   }
 
   const data = params.get('data') || params.get('text') || params.get('value') || 'https://wajihah-qr-generator.pages.dev/';
-  const size = params.get('size') || 350;
-  const quietZone = params.get('quietZone') || 10;
+  const size = params.get('size') || 400;
+  const quietZone = params.get('quietZone') || 25;
   const ecLevel = params.get('ecLevel') || 'H';
   const fgColor = params.get('fgColor') || params.get('fg') || '#000000';
   const bgColor = params.get('bgColor') || params.get('bg') || '#ffffff';
   const qrStyle = params.get('qrStyle') || params.get('style') || 'squares';
-  const eyeRadius = params.get('eyeRadius') || params.get('eye') || 10;
+  const eyeRadius = params.get('eyeRadius') || params.get('eye') || 6;
   const eyeColor = params.get('eyeColor') || fgColor;
   const logo = params.get('logo') || params.get('logoImage') || null;
   const logoWidth = params.get('logoWidth') || null;
@@ -306,6 +308,7 @@ export async function onRequest(context) {
   const removeQrCodeBehindLogo = params.get('removeBehindLogo') !== 'false';
   const bottomText = params.get('bottomText') || params.get('label') || '';
   const bottomTextColor = params.get('bottomTextColor') || params.get('textColor') || null;
+  const format = (params.get('format') || 'png').toLowerCase();
 
   try {
     const svg = generateQrSvg({
@@ -329,21 +332,44 @@ export async function onRequest(context) {
       bottomTextColor,
     });
 
-    return new Response(svg, {
+    if (format === 'svg') {
+      return new Response(svg, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/svg+xml; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+        },
+      });
+    }
+
+    // Default to true raster PNG image
+    const fontBuffer = getFontBuffer();
+    const resvg = await Resvg.async(svg, {
+      font: {
+        fontBuffers: [fontBuffer],
+        defaultFontFamily: 'Roboto',
+      },
+    });
+    const pngData = resvg.render();
+    const pngBuffer = pngData.asPng();
+
+    return new Response(pngBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'image/svg+xml; charset=utf-8',
+        'Content-Type': 'image/png',
+        'Content-Disposition': 'inline; filename="qr-code.png"',
         'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'public, max-age=86400, s-maxage=86400',
       },
     });
   } catch (err) {
     return new Response(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"><text x="10" y="50" fill="red" font-size="14">Error generating QR: ${err.message}</text></svg>`,
+      `Error generating QR: ${err.message}`,
       {
-        status: 400,
+        status: 500,
         headers: {
-          'Content-Type': 'image/svg+xml; charset=utf-8',
+          'Content-Type': 'text/plain; charset=utf-8',
           'Access-Control-Allow-Origin': '*',
         },
       }
