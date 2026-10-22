@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import QRForm from "./components/QRForm";
 import QRPreview from "./components/QRPreview";
 import QRScanner from "./components/QRScanner";
+import ApiCopyModal from "./components/ApiCopyModal";
 
 function App() {
   // Load from localStorage if available
@@ -18,6 +19,8 @@ function App() {
     return def;
   };
   const [showScanner, setShowScanner] = useState(false);
+  const [showApiModal, setShowApiModal] = useState(false);
+  const [bottomText, setBottomText] = useState(getInitial('bottomText', ''));
 
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [qrOpacity, setQrOpacity] = useState(getInitial('qrOpacity', 1));
@@ -94,6 +97,7 @@ function App() {
   useEffect(() => { localStorage.setItem('qrform_enableCORS', enableCORS); }, [enableCORS]);
   useEffect(() => { localStorage.setItem('qrform_customId', customId); }, [customId]);
   useEffect(() => { localStorage.setItem('qrform_logoBg', logoBg); }, [logoBg]);
+  useEffect(() => { localStorage.setItem('qrform_bottomText', bottomText); }, [bottomText]);
 
   // Sync logo natural size
   useEffect(() => {
@@ -318,6 +322,7 @@ function App() {
                 logoBgObjectFit={logoBgObjectFit}
                 logoBgCustomStyle={logoBgCustomStyle}
                 qrOpacity={qrOpacity}
+                bottomText={bottomText}
               />
               <div style={{
                 marginTop: 20, 
@@ -430,9 +435,29 @@ function App() {
                     }
                   }
                   if (canvas) {
+                    let exportCanvas = canvas;
+                    if (bottomText && bottomText.trim()) {
+                      const merged = document.createElement('canvas');
+                      const fontSize = Math.max(16, Math.round(canvas.width * 0.046));
+                      const textPadding = Math.round(fontSize * 1.8);
+                      merged.width = canvas.width;
+                      merged.height = canvas.height + textPadding;
+                      const ctx = merged.getContext('2d');
+                      if (bgColor && bgColor !== 'transparent') {
+                        ctx.fillStyle = bgColor;
+                        ctx.fillRect(0, 0, merged.width, merged.height);
+                      }
+                      ctx.drawImage(canvas, 0, 0);
+                      ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                      ctx.fillStyle = fgColor || '#000000';
+                      ctx.textAlign = 'center';
+                      ctx.textBaseline = 'middle';
+                      ctx.fillText(bottomText.trim(), merged.width / 2, canvas.height + (textPadding * 0.52));
+                      exportCanvas = merged;
+                    }
                     const link = document.createElement('a');
                     link.download = 'qr-code.png';
-                    link.href = canvas.toDataURL('image/png');
+                    link.href = exportCanvas.toDataURL('image/png');
                     link.click();
                   } else {
                     alert('QR code canvas tidak ditemukan. Pastikan preview QR sudah muncul.');
@@ -536,8 +561,65 @@ function App() {
                   </svg>
                   Pratinjau Ukuran Penuh
                 </button>
+
+                <button 
+                  type="button" 
+                  style={{
+                    padding: window.innerWidth < 768 ? '10px 16px' : '12px 20px', 
+                    fontSize: window.innerWidth < 768 ? 14 : 16, 
+                    borderRadius: 8, 
+                    background: '#27ae60', 
+                    color: '#fff', 
+                    border: 'none', 
+                    cursor: 'pointer', 
+                    boxShadow: '0 2px 8px rgba(39, 174, 96, 0.2)',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontWeight: 500,
+                    flex: window.innerWidth < 768 ? '1' : 'initial'
+                  }}
+                  onClick={() => setShowApiModal(true)}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#219150';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#27ae60';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                  </svg>
+                  Salin URL API
+                </button>
               </div>
             </div>
+            
+            <ApiCopyModal
+              isOpen={showApiModal}
+              onClose={() => setShowApiModal(false)}
+              value={value}
+              size={size}
+              fgColor={fgColor}
+              bgColor={bgColor}
+              ecLevel={ecLevel}
+              quietZone={quietZone}
+              logoImage={logoImage}
+              logoWidth={logoWidth}
+              logoHeight={logoHeight}
+              logoOpacity={logoOpacity}
+              logoPadding={logoPadding}
+              logoPaddingStyle={logoPaddingStyle}
+              removeQrCodeBehindLogo={removeQrCodeBehindLogo}
+              qrStyle={qrStyle}
+              eyeRadius={eyeRadius}
+              eyeColor={eyeColor}
+              bottomText={bottomText}
+            />
             
           </div>
           
@@ -580,6 +662,7 @@ function App() {
               logoBgCustomStyle={logoBgCustomStyle} setLogoBgCustomStyle={setLogoBgCustomStyle}
               handleLogoBgWidth={handleLogoBgWidth} handleLogoBgHeight={handleLogoBgHeight}
               qrOpacity={qrOpacity} setQrOpacity={setQrOpacity}
+              bottomText={bottomText} setBottomText={setBottomText}
             />
             
           </div>

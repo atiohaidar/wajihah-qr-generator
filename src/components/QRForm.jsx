@@ -33,7 +33,9 @@ const QRForm = ({
   logoBgObjectFit, setLogoBgObjectFit,
   logoBgCustomStyle, setLogoBgCustomStyle,
   // Handler functions for logo background
-  handleLogoBgWidth, handleLogoBgHeight
+  handleLogoBgWidth, handleLogoBgHeight,
+  // Bottom text under QR code
+  bottomText, setBottomText
 }) => {
   // Simpan ukuran logo sebelum toggle background
   const prevLogoSize = useRef({ width: logoWidth, height: logoHeight });
@@ -58,7 +60,7 @@ const QRForm = ({
   const [testError, setTestError] = useState(null);
   const [logoLoading, setLogoLoading] = useState(false);
   const [logoBgRatioLocked, setLogoBgRatioLocked] = useState(true);
-  
+
   // Reset test result when value changes
   useEffect(() => {
     setQrTested(false);
@@ -87,7 +89,7 @@ const QRForm = ({
     { label: "FRI", value: "/LOGO WAJIHAH/Al-Fath Fakultas/FRI.png" },
     { label: "FTE", value: "/LOGO WAJIHAH/Al-Fath Fakultas/FTE.png" },
   ];
-  
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -103,25 +105,25 @@ const QRForm = ({
   const handleLogoChange = (newLogoImage) => {
     setLogoLoading(true);
     setLogoImage(newLogoImage);
-    
+
     // Simulate loading time for color adjustment and size calculation
     setTimeout(() => {
       setLogoLoading(false);
     }, 800);
   };
-  
+
   // Test QR code readability
   const testQrCode = async () => {
     try {
       setQrTested(true);
       setQrTestResult(null);
       setTestError(null);
-      
+
       // Get QR canvas
       const qrId = customId && customId.trim() ? customId : 'qr-code-canvas';
       const qrEl = document.getElementById(qrId);
       let canvas = null;
-      
+
       if (qrEl && qrEl.tagName === 'CANVAS') {
         canvas = qrEl;
       } else if (qrEl) {
@@ -129,46 +131,46 @@ const QRForm = ({
       } else {
         canvas = document.querySelector(`#${qrId}, canvas#${qrId}`);
       }
-      
+
       if (!canvas) {
         throw new Error("QR Code canvas tidak ditemukan");
       }
-      
+
       const dataUrl = canvas.toDataURL('image/png');
-      
+
       // Load image for testing
       const image = new Image();
       image.src = dataUrl;
-      
+
       await new Promise((resolve, reject) => {
         image.onload = resolve;
         image.onerror = () => reject(new Error('Gagal memuat gambar QR'));
         setTimeout(() => reject(new Error('Timeout memuat gambar QR')), 3000);
       });
-      
+
       // For demo purposes, we'll simulate a test result based on QR settings
       // In a real app, you'd use a QR code scanner library
-      
+
       if (!value || value.trim() === '') {
         setQrTestResult(false);
         setTestError('QR Code tidak berisi data');
         return;
       }
-      
+
       // Simulate potential issues with low error correction and dense data
       if (ecLevel === 'L' && value.length > 50) {
         setQrTestResult(false);
         setTestError('QR mungkin sulit dibaca. Tingkatkan level koreksi kesalahan');
         return;
       }
-      
+
       // Simulate logo issues
-      if (logoImage && logoWidth > size/2 && ecLevel !== 'H') {
+      if (logoImage && logoWidth > size / 2 && ecLevel !== 'H') {
         setQrTestResult(false);
         setTestError('Logo terlalu besar untuk level koreksi kesalahan saat ini');
         return;
       }
-      
+
       setQrTestResult(true);
     } catch (err) {
       console.error('QR test error:', err);
@@ -343,12 +345,12 @@ const QRForm = ({
   // Tab content animation variants
   const tabContentVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       transition: { duration: 0.3 }
     },
-    exit: { 
+    exit: {
       opacity: 0,
       y: -20,
       transition: { duration: 0.2 }
@@ -359,8 +361,8 @@ const QRForm = ({
     <div style={formContainerStyle}>
       <div style={formCardStyle}>
         <div style={tabsStyle}>
-          <div 
-            style={tabStyle(activeTab === 'basic')} 
+          <div
+            style={tabStyle(activeTab === 'basic')}
             onClick={() => setActiveTab('basic')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -372,8 +374,8 @@ const QRForm = ({
             </svg>
             Dasar
           </div>
-          <div 
-            style={tabStyle(activeTab === 'logo')} 
+          <div
+            style={tabStyle(activeTab === 'logo')}
             onClick={() => setActiveTab('logo')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -383,8 +385,8 @@ const QRForm = ({
             </svg>
             Logo
           </div>
-          <div 
-            style={tabStyle(activeTab === 'appearance')} 
+          <div
+            style={tabStyle(activeTab === 'appearance')}
             onClick={() => setActiveTab('appearance')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -393,8 +395,8 @@ const QRForm = ({
             </svg>
             Tampilan
           </div>
-          <div 
-            style={tabStyle(activeTab === 'advanced')} 
+          <div
+            style={tabStyle(activeTab === 'advanced')}
             onClick={() => setActiveTab('advanced')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -415,27 +417,27 @@ const QRForm = ({
         <div style={formContentStyle}>
           <AnimatePresence mode="wait">
             {activeTab === 'basic' && (
-              <motion.div 
+              <motion.div
                 key="basic"
                 initial="hidden"
                 animate="visible"
                 exit="exit"
                 variants={tabContentVariants}
               >
-                
+
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '8px', verticalAlign: 'middle'}}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px', verticalAlign: 'middle' }}>
                       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                     </svg>
                     URL atau Teks untuk QR Code
                   </label>
-                  <small style={{color: '#e67e22', fontWeight: '500'}}>(link ini ubah aja sesuai kebutuhan, saranku udah di short link (misal make bitly))</small>
+                  <small style={{ color: '#e67e22', fontWeight: '500' }}>(link ini ubah aja sesuai kebutuhan, saranku udah di short link (misal make bitly))</small>
 
-                  <input 
-                    type="text" 
-                    value={value} 
+                  <input
+                    type="text"
+                    value={value}
                     onChange={(e) => setValue(e.target.value)}
                     placeholder="Masukkan URL atau teks untuk QR Code"
                     style={{
@@ -454,25 +456,46 @@ const QRForm = ({
                     }}
                   />
                 </div>
-                    <div style={{marginBottom: 20}}>
+
+                <div style={inputGroupStyle}>
+                  <label style={labelStyle}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px', verticalAlign: 'middle' }}>
+                      <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                      <line x1="9" y1="20" x2="15" y2="20"></line>
+                      <line x1="12" y1="4" x2="12" y2="20"></line>
+                    </svg>
+                    Tulisan di Bawah QR Code (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={bottomText || ''}
+                    onChange={(e) => setBottomText && setBottomText(e.target.value)}
+                    placeholder="Contoh: Pendaftaran Kegiatan"
+                    style={inputStyle}
+                  />
+                  <small style={{ color: '#666', fontSize: 12, marginTop: 4, display: 'block' }}>
+                    Tulisan ini akan muncul langsung di bawah gambar QR dan juga otomatis masuk ke parameter API (&bottomText=...).
+                  </small>
+                </div>
+                <div style={{ marginBottom: 20 }}>
                   <label style={labelStyle}>Ukuran Logo</label>
                   <input
                     type="range"
                     min="24"
-                    max={Math.floor(size/1.5)}
+                    max={Math.floor(size / 1.5)}
                     value={logoWidth}
                     onChange={e => handleLogoWidth(Number(e.target.value))}
-                    style={{width:'100%'}}
+                    style={{ width: '100%' }}
                   />
-                  <div style={{fontSize:13, color:'#666', marginTop:4}}>
+                  <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
                     {logoWidth} x {logoHeight} px
                   </div>
                 </div>
-               
 
-                <div style={{marginBottom: '20px'}}>
-                  <h5 style={{marginBottom: '8px', marginTop: '16px'}}>Pilih Logo</h5>
-                  <label style={{display:'flex', alignItems:'center', marginBottom:8, fontSize:13, cursor:'pointer'}}>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <h5 style={{ marginBottom: '8px', marginTop: '16px' }}>Pilih Logo</h5>
+                  <label style={{ display: 'flex', alignItems: 'center', marginBottom: 8, fontSize: 13, cursor: 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={!!logoImage}
@@ -483,11 +506,11 @@ const QRForm = ({
                           setLogoImage(null);
                         }
                       }}
-                      style={{marginRight:'8px'}}
+                      style={{ marginRight: '8px' }}
                     />
                     Tampilkan Logo di QR
                   </label>
-                  <div style={{fontSize:13, color:'#e67e22', marginBottom:8, marginTop:-4}}>
+                  <div style={{ fontSize: 13, color: '#e67e22', marginBottom: 8, marginTop: -4 }}>
                     Jika logo masih bermasalah, coba pilih logo lain lalu kembali ke logo yang diinginkan.
                   </div>
                   {logoLoading && (
@@ -509,7 +532,7 @@ const QRForm = ({
                         borderRadius: '50%',
                         animation: 'spin 1s linear infinite'
                       }}></div>
-                      <span style={{color: '#1976d2', fontSize: '14px'}}>
+                      <span style={{ color: '#1976d2', fontSize: '14px' }}>
                         Sedang menyesuaikan warna dan ukuran logo...
                       </span>
                       <style>
@@ -520,7 +543,7 @@ const QRForm = ({
                   {!!logoImage && (
                     <div style={logoSelectorStyle}>
                       {logoOptions.map(option => (
-                        <div 
+                        <div
                           key={option.value}
                           style={{
                             ...logoOptionStyle(logoImage === option.value),
@@ -529,15 +552,15 @@ const QRForm = ({
                           }}
                           onClick={() => handleLogoChange(option.value)}
                         >
-                          <img 
-                            src={option.value} 
+                          <img
+                            src={option.value}
                             alt={option.label}
                             style={logoImageStyle}
                           />
                           <span style={logoLabelStyle}>{option.label}</span>
                         </div>
                       ))}
-                      <div 
+                      <div
                         style={{
                           ...logoOptionStyle(false),
                           border: '1px dashed #aaa',
@@ -547,48 +570,48 @@ const QRForm = ({
                         }}
                         onClick={() => fileInputRef.current.click()}
                       >
-                        <div style={{fontSize: '24px', color: '#aaa', marginBottom: '2px'}}>+</div>
+                        <div style={{ fontSize: '24px', color: '#aaa', marginBottom: '2px' }}>+</div>
                         <span style={logoLabelStyle}>Upload</span>
-                        <input 
+                        <input
                           type="file"
                           ref={fileInputRef}
                           onChange={handleFileChange}
                           accept="image/*"
-                          style={{display: 'none'}}
+                          style={{ display: 'none' }}
                         />
                       </div>
                     </div>
                   )}
                 </div>
-                  {/*  kalau logo image nya ada */}
+                {/*  kalau logo image nya ada */}
                 {!!logoImage && (
-                  <div style={{marginBottom: '20px'}}>
-                    <h5 style={{marginBottom: '8px', marginTop: '16px'}}>Logo Al-Fath Fakultas</h5>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h5 style={{ marginBottom: '8px', marginTop: '16px' }}>Logo Al-Fath Fakultas</h5>
                     <div style={logoSelectorStyle}>
                       {fakultasLogos.map(option => (
-                        <div 
-                        key={option.value}
-                        style={{
-                          ...logoOptionStyle(logoImage === option.value),
-                          opacity: logoLoading ? 0.6 : 1,
-                          pointerEvents: logoLoading ? 'none' : 'auto'
-                        }}
-                        onClick={() => handleLogoChange(option.value)}
-                      >
-                        <img 
-                          src={option.value} 
-                          alt={option.label}
-                          style={logoImageStyle}
-                        />
-                        <span style={logoLabelStyle}>{option.label}</span>
-                      </div>
-                    ))}
+                        <div
+                          key={option.value}
+                          style={{
+                            ...logoOptionStyle(logoImage === option.value),
+                            opacity: logoLoading ? 0.6 : 1,
+                            pointerEvents: logoLoading ? 'none' : 'auto'
+                          }}
+                          onClick={() => handleLogoChange(option.value)}
+                        >
+                          <img
+                            src={option.value}
+                            alt={option.label}
+                            style={logoImageStyle}
+                          />
+                          <span style={logoLabelStyle}>{option.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
                 )}
 
-                   <button
+                <button
                   type="button"
                   style={{
                     marginBottom: 20,
@@ -634,26 +657,26 @@ const QRForm = ({
                 >
                   Reset ke Default
                 </button>
-               
+
               </motion.div>
             )}
 
             {activeTab === 'logo' && (
-              <motion.div 
+              <motion.div
                 key="logo"
                 initial="hidden"
                 animate="visible"
                 exit="exit"
                 variants={tabContentVariants}
               >
-                <h4 style={{marginTop: 0, marginBottom: '16px'}}>Pengaturan Logo</h4>
-                
-                
+                <h4 style={{ marginTop: 0, marginBottom: '16px' }}>Pengaturan Logo</h4>
+
+
 
                 <div style={flexStyle}>
-                  <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                  <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                     <label style={labelStyle}>Lebar Logo</label>
-                    <input 
+                    <input
                       type="number"
                       value={logoWidth}
                       onChange={(e) => handleLogoWidth(Number(e.target.value))}
@@ -662,9 +685,9 @@ const QRForm = ({
                       max="512"
                     />
                   </div>
-                  <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                  <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                     <label style={labelStyle}>Tinggi Logo</label>
-                    <input 
+                    <input
                       type="number"
                       value={logoHeight}
                       onChange={(e) => handleLogoHeight(Number(e.target.value))}
@@ -674,58 +697,58 @@ const QRForm = ({
                     />
                   </div>
                 </div>
-                
-                <div style={{marginTop: '12px'}}>
-                  <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
-                    <input 
+
+                <div style={{ marginTop: '12px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
                       type="checkbox"
                       checked={logoRatioLocked}
                       onChange={(e) => setLogoRatioLocked(e.target.checked)}
                     />
-                    <span style={{marginLeft: '8px'}}>Kunci rasio aspek logo</span>
+                    <span style={{ marginLeft: '8px' }}>Kunci rasio aspek logo</span>
                   </label>
                 </div>
 
-                <div style={{marginTop: '16px'}}>
+                <div style={{ marginTop: '16px' }}>
                   <label style={labelStyle}>Transparansi Logo</label>
-                  <div style={{display: 'flex', alignItems: 'center'}}>
-                    <input 
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
                       type="range"
                       min="0"
                       max="1"
                       step="0.05"
                       value={logoOpacity}
                       onChange={(e) => setLogoOpacity(Number(e.target.value))}
-                      style={{flex: 1, marginRight: '10px'}}
+                      style={{ flex: 1, marginRight: '10px' }}
                     />
                     <span>{Math.round(logoOpacity * 100)}%</span>
                   </div>
                 </div>
 
-                <div style={{marginTop: '16px'}}>
-                  <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
-                    <input 
+                <div style={{ marginTop: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
                       type="checkbox"
                       checked={removeQrCodeBehindLogo}
                       onChange={(e) => setRemoveQrCodeBehindLogo(e.target.checked)}
                     />
-                    <span style={{marginLeft: '8px'}}>Hapus QR di belakang logo</span>
+                    <span style={{ marginLeft: '8px' }}>Hapus QR di belakang logo</span>
                   </label>
                 </div>
 
-                <div style={{marginTop: '20px', padding: '16px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef'}}>
-                  <h5 style={{marginTop: 0, marginBottom: '16px', color: '#495057'}}>Pengaturan Logo Background</h5>
-                  
-                  <div style={{marginBottom: '16px'}}>
-                    <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
-                      <input 
+                <div style={{ marginTop: '20px', padding: '16px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                  <h5 style={{ marginTop: 0, marginBottom: '16px', color: '#495057' }}>Pengaturan Logo Background</h5>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
                         type="checkbox"
                         checked={logoBg}
                         onChange={(e) => setLogoBg(e.target.checked)}
                       />
-                      <span style={{marginLeft: '8px'}}>Aktifkan Logo sebagai Background</span>
+                      <span style={{ marginLeft: '8px' }}>Aktifkan Logo sebagai Background</span>
                     </label>
-                    <p style={{fontSize: '12px', color: '#6c757d', margin: '4px 0 0 24px'}}>
+                    <p style={{ fontSize: '12px', color: '#6c757d', margin: '4px 0 0 24px' }}>
                       Logo akan menjadi latar belakang QR code alih-alih di depan
                     </p>
                   </div>
@@ -737,9 +760,9 @@ const QRForm = ({
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <div style={{marginBottom: '16px'}}>
+                      <div style={{ marginBottom: '16px' }}>
                         <label style={labelStyle}>Transparansi QR</label>
-                        <div style={{display: 'flex', alignItems: 'center'}}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
                           <input
                             type="range"
                             min="0.1"
@@ -747,7 +770,7 @@ const QRForm = ({
                             step="0.01"
                             value={qrOpacity}
                             onChange={e => setQrOpacity(Number(e.target.value))}
-                            style={{flex: 1, marginRight: '10px'}}
+                            style={{ flex: 1, marginRight: '10px' }}
                           />
                           <input
                             type="number"
@@ -756,17 +779,17 @@ const QRForm = ({
                             step="0.01"
                             value={qrOpacity}
                             onChange={e => setQrOpacity(Number(e.target.value))}
-                            style={{width: '60px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd', marginRight: '8px'}}
+                            style={{ width: '60px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd', marginRight: '8px' }}
                           />
                         </div>
-                        <p style={{fontSize: '12px', color: '#6c757d', margin: '4px 0 0'}}>
+                        <p style={{ fontSize: '12px', color: '#6c757d', margin: '4px 0 0' }}>
                           Atur transparansi QR agar logo lebih terlihat. (0.1 = sangat transparan, 1 = solid)
                         </p>
                       </div>
                       <div style={flexStyle}>
-                        <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                        <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                           <label style={labelStyle}>Lebar Background</label>
-                          <input 
+                          <input
                             type="number"
                             value={logoBgWidth}
                             onChange={(e) => handleLogoBgWidth ? handleLogoBgWidth(Number(e.target.value)) : setLogoBgWidth(Number(e.target.value))}
@@ -775,9 +798,9 @@ const QRForm = ({
                             max="512"
                           />
                         </div>
-                        <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                        <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                           <label style={labelStyle}>Tinggi Background</label>
-                          <input 
+                          <input
                             type="number"
                             value={logoBgHeight}
                             onChange={(e) => handleLogoBgHeight ? handleLogoBgHeight(Number(e.target.value)) : setLogoBgHeight(Number(e.target.value))}
@@ -787,21 +810,21 @@ const QRForm = ({
                           />
                         </div>
                       </div>
-                      
-                      <div style={{marginTop: '12px'}}>
-                        <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
-                          <input 
+
+                      <div style={{ marginTop: '12px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                          <input
                             type="checkbox"
                             checked={logoBgRatioLocked}
                             onChange={(e) => setLogoBgRatioLocked(e.target.checked)}
                           />
-                          <span style={{marginLeft: '8px'}}>Kunci rasio aspek background</span>
+                          <span style={{ marginLeft: '8px' }}>Kunci rasio aspek background</span>
                         </label>
                       </div>
 
-                      <div style={{marginTop: '16px'}}>
+                      <div style={{ marginTop: '16px' }}>
                         <label style={labelStyle}>Posisi Background</label>
-                        <select 
+                        <select
                           value={logoBgPosition}
                           onChange={(e) => setLogoBgPosition(e.target.value)}
                           style={inputStyle}
@@ -816,19 +839,19 @@ const QRForm = ({
                       </div>
 
                       {logoBgPosition === 'custom' && (
-                        <div style={{...flexStyle, marginTop: '12px'}}>
-                          <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                        <div style={{ ...flexStyle, marginTop: '12px' }}>
+                          <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                             <label style={labelStyle}>Posisi X</label>
-                            <input 
+                            <input
                               type="number"
                               value={logoBgX}
                               onChange={(e) => setLogoBgX(Number(e.target.value))}
                               style={inputStyle}
                             />
                           </div>
-                          <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                          <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                             <label style={labelStyle}>Posisi Y</label>
-                            <input 
+                            <input
                               type="number"
                               value={logoBgY}
                               onChange={(e) => setLogoBgY(Number(e.target.value))}
@@ -838,9 +861,9 @@ const QRForm = ({
                         </div>
                       )}
 
-                      <div style={{marginTop: '16px'}}>
+                      <div style={{ marginTop: '16px' }}>
                         <label style={labelStyle}>Object Fit Background</label>
-                        <select 
+                        <select
                           value={logoBgObjectFit}
                           onChange={(e) => setLogoBgObjectFit(e.target.value)}
                           style={inputStyle}
@@ -853,7 +876,7 @@ const QRForm = ({
                         </select>
                       </div>
 
-                    
+
                     </motion.div>
                   )}
                 </div>
@@ -861,7 +884,7 @@ const QRForm = ({
             )}
 
             {activeTab === 'appearance' && (
-              <motion.div 
+              <motion.div
                 key="appearance"
                 initial="hidden"
                 animate="visible"
@@ -870,59 +893,59 @@ const QRForm = ({
               >
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>Ukuran QR</label>
-                  <div style={{display: 'flex', alignItems: 'center'}}>
-                    <input 
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
                       type="range"
                       min="200"
                       max="600"
                       value={size}
                       onChange={(e) => setSize(Number(e.target.value))}
-                      style={{flex: 1, marginRight: '10px'}}
+                      style={{ flex: 1, marginRight: '10px' }}
                     />
-                    <input 
+                    <input
                       type="number"
                       min="200"
                       max="600"
                       value={size}
                       onChange={(e) => setSize(Number(e.target.value))}
-                      style={{width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd'}}
+                      style={{ width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }}
                     />
                   </div>
-                  <p style={{fontSize: '13px', color: '#6c757d', margin: '4px 0 0'}}>
+                  <p style={{ fontSize: '13px', color: '#6c757d', margin: '4px 0 0' }}>
                     Ini adalah ukuran preview. QR yang diunduh akan tetap berkualitas baik.
                   </p>
                 </div>
 
                 <div style={flexStyle}>
-                  <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                  <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                     <label style={labelStyle}>
                       Warna QR
                       <span style={colorPreviewStyle(fgColor)}></span>
                     </label>
-                    <input 
+                    <input
                       type="color"
                       value={fgColor}
                       onChange={(e) => setFgColor(e.target.value)}
-                      style={{width: '100%', height: '40px'}}
+                      style={{ width: '100%', height: '40px' }}
                     />
                   </div>
-                  <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                  <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                     <label style={labelStyle}>
                       Warna Latar Belakang
                       <span style={colorPreviewStyle(bgColor)}></span>
                     </label>
-                    <input 
+                    <input
                       type="color"
                       value={bgColor === 'transparent' ? '#ffffff' : bgColor}
                       onChange={(e) => setBgColor(e.target.value)}
-                      style={{width: '100%', height: '40px'}}
+                      style={{ width: '100%', height: '40px' }}
                     />
-                    <label style={{display:'flex', alignItems:'center', marginTop:'8px', fontSize:'13px', cursor:'pointer'}}>
+                    <label style={{ display: 'flex', alignItems: 'center', marginTop: '8px', fontSize: '13px', cursor: 'pointer' }}>
                       <input
                         type="checkbox"
                         checked={bgColor === 'transparent'}
                         onChange={e => setBgColor(e.target.checked ? 'transparent' : '#ffffff')}
-                        style={{marginRight:'8px'}}
+                        style={{ marginRight: '8px' }}
                       />
                       Transparan
                     </label>
@@ -930,23 +953,23 @@ const QRForm = ({
                 </div>
 
                 <div style={flexStyle}>
-                  <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                  <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                     <label style={labelStyle}>
                       Warna Sudut QR
                       <span style={colorPreviewStyle(eyeColor)}></span>
                     </label>
-                    <input 
+                    <input
                       type="color"
                       value={eyeColor}
                       onChange={(e) => setEyeColor(e.target.value)}
-                      style={{width: '100%', height: '40px'}}
+                      style={{ width: '100%', height: '40px' }}
                     />
                   </div>
                 </div>
 
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>Gaya QR</label>
-                  <select 
+                  <select
                     value={qrStyle}
                     onChange={(e) => setQrStyle(e.target.value)}
                     style={inputStyle}
@@ -959,22 +982,22 @@ const QRForm = ({
 
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>Radius Sudut QR</label>
-                  <div style={{display: 'flex', alignItems: 'center'}}>
-                    <input 
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
                       type="range"
                       min="0"
                       max="50"
                       value={eyeRadius}
                       onChange={(e) => setEyeRadius(Number(e.target.value))}
-                      style={{flex: 1, marginRight: '10px'}}
+                      style={{ flex: 1, marginRight: '10px' }}
                     />
-                    <input 
+                    <input
                       type="number"
                       min="0"
                       max="50"
                       value={eyeRadius}
                       onChange={(e) => setEyeRadius(Number(e.target.value))}
-                      style={{width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd'}}
+                      style={{ width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }}
                     />
                   </div>
                 </div>
@@ -982,7 +1005,7 @@ const QRForm = ({
             )}
 
             {activeTab === 'advanced' && (
-              <motion.div 
+              <motion.div
                 key="advanced"
                 initial="hidden"
                 animate="visible"
@@ -991,7 +1014,7 @@ const QRForm = ({
               >
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>Level Koreksi Kesalahan</label>
-                  <select 
+                  <select
                     value={ecLevel}
                     onChange={(e) => setEcLevel(e.target.value)}
                     style={inputStyle}
@@ -1001,63 +1024,63 @@ const QRForm = ({
                     <option value="Q">Q - Quartile (25% dapat dipulihkan)</option>
                     <option value="H">H - Tinggi (30% dapat dipulihkan)</option>
                   </select>
-                  <p style={{fontSize: '13px', color: '#666', margin: '6px 0 0'}}>
+                  <p style={{ fontSize: '13px', color: '#666', margin: '6px 0 0' }}>
                     Level koreksi kesalahan yang lebih tinggi membuat QR lebih tahan terhadap kerusakan, tetapi mengurangi kapasitas data.
                   </p>
                 </div>
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>Quiet Zone (Margin)</label>
-                  <div style={{display: 'flex', alignItems: 'center'}}>
-                    <input 
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
                       type="range"
                       min="0"
                       max="50"
                       value={quietZone}
                       onChange={(e) => setQuietZone(Number(e.target.value))}
-                      style={{flex: 1, marginRight: '10px'}}
+                      style={{ flex: 1, marginRight: '10px' }}
                     />
-                    <input 
+                    <input
                       type="number"
                       min="0"
                       max="50"
                       value={quietZone}
                       onChange={(e) => setQuietZone(Number(e.target.value))}
-                      style={{width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd'}}
+                      style={{ width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd' }}
                     />
                   </div>
                 </div>
                 {/* Fitur lanjutan lain dinonaktifkan */}
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>Padding Logo</label>
-                  <div style={{display: 'flex', alignItems: 'center'}}>
-                    <input 
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
                       type="range"
                       min="0"
                       max="50"
                       step="1"
                       value={Math.round(logoPadding * 100)}
                       disabled
-                      style={{flex: 1, marginRight: '10px'}}
+                      style={{ flex: 1, marginRight: '10px' }}
                     />
-                    <input 
+                    <input
                       type="number"
                       min="0"
                       max="50"
                       value={Math.round(logoPadding * 100)}
                       disabled
-                      style={{width: '60px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd', marginRight: '8px'}}
+                      style={{ width: '60px', padding: '8px', borderRadius: '8px', border: '1px solid #ddd', marginRight: '8px' }}
                     />
                     <span>%</span>
                   </div>
-                  <p style={{fontSize: '12px', color: '#6c757d', margin: '4px 0 0'}}>
+                  <p style={{ fontSize: '12px', color: '#6c757d', margin: '4px 0 0' }}>
                     Padding logo dalam persen dari ukuran logo (0-50%).
                   </p>
-                  <div style={{color:'#e67e22', fontSize:'13px', marginTop:'4px'}}>Belum beres</div>
+                  <div style={{ color: '#e67e22', fontSize: '13px', marginTop: '4px' }}>belum selesai di develop</div>
                 </div>
                 <div style={flexStyle}>
-                  <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                  <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                     <label style={labelStyle}>Bentuk Padding Logo</label>
-                    <select 
+                    <select
                       value={logoPaddingStyle}
                       disabled
                       style={inputStyle}
@@ -1065,11 +1088,11 @@ const QRForm = ({
                       <option value="square">Kotak</option>
                       <option value="circle">Lingkaran</option>
                     </select>
-                    <div style={{color:'#e67e22', fontSize:'13px', marginTop:'4px'}}>Belum beres</div>
+                    <div style={{ color: '#e67e22', fontSize: '13px', marginTop: '4px' }}>belum selesai di develop</div>
                   </div>
-                  <div style={{flex: '1 1 45%', minWidth: '120px'}}>
+                  <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
                     <label style={labelStyle}>Radius Padding Logo</label>
-                    <input 
+                    <input
                       type="number"
                       value={logoPaddingRadius}
                       min="0"
@@ -1077,30 +1100,30 @@ const QRForm = ({
                       disabled
                       style={inputStyle}
                     />
-                    <div style={{color:'#e67e22', fontSize:'13px', marginTop:'4px'}}>Belum beres</div>
+                    <div style={{ color: '#e67e22', fontSize: '13px', marginTop: '4px' }}>belum selesai di develop</div>
                   </div>
                 </div>
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>ID Canvas Kustom</label>
-                  <input 
+                  <input
                     type="text"
                     value={customId}
                     placeholder="qr-code-canvas (default)"
                     disabled
                     style={inputStyle}
                   />
-                  <div style={{color:'#e67e22', fontSize:'13px', marginTop:'4px'}}>Belum beres</div>
+                  <div style={{ color: '#e67e22', fontSize: '13px', marginTop: '4px' }}>belum selesai di develop</div>
                 </div>
-                <div style={{marginTop: '12px'}}>
-                  <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
-                    <input 
+                <div style={{ marginTop: '12px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
                       type="checkbox"
                       checked={enableCORS}
                       disabled
                     />
-                    <span style={{marginLeft: '8px'}}>Aktifkan CORS</span>
+                    <span style={{ marginLeft: '8px' }}>Aktifkan CORS</span>
                   </label>
-                  <div style={{color:'#e67e22', fontSize:'13px', marginTop:'4px'}}>Belum beres</div>
+                  <div style={{ color: '#e67e22', fontSize: '13px', marginTop: '4px' }}>belum selesai di develop</div>
                 </div>
               </motion.div>
             )}

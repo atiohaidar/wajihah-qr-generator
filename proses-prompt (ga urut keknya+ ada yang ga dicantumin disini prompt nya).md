@@ -1813,11 +1813,11 @@ Sekarang sudah ada slider transparansi QR yang hanya muncul saat "Aktifkan logo 
 
 Silakan dicoba! Jika ingin behavior atau label berbeda, silakan informasikan.
 
-TioHaidarHanif: untuk fitur di lanjutan selain level koreksi dan margin, form nya di disable dulu, dan beri informasi "belum beres"
+TioHaidarHanif: untuk fitur di lanjutan selain level koreksi dan margin, form nya di disable dulu, dan beri informasi "belum selesai di develop"
 
 GitHub Copilot: Saya akan:
 - Membuat semua input di tab "Lanjutan" (selain level koreksi dan margin/quiet zone) menjadi disabled.
-- Menambahkan info "belum beres" di bawah input yang dinonaktifkan.
+- Menambahkan info "belum selesai di develop" di bawah input yang dinonaktifkan.
 
 Saya akan update QRForm.jsx pada tab "Lanjutan". 
 ```
@@ -1829,14 +1829,14 @@ Made changes.
 ```
 Ada error karena penempatan patch menyebabkan JSX tidak balance (tag penutup hilang). Saya akan memperbaiki dengan hanya men-disable dan menambah info pada input, tanpa mengubah struktur tag secara besar-besaran.
 
-Saya akan memperbaiki patch agar hanya menambahkan properti disabled dan info "belum beres" pada input yang relevan, tanpa menghapus tag penutup. Beberapa input di tab "Lanjutan" sudah ada yang di-disable dan diberi info "belum beres", namun ada duplikasi dan struktur JSX yang tidak rapi akibat edit sebelumnya.
+Saya akan memperbaiki patch agar hanya menambahkan properti disabled dan info "belum selesai di develop" pada input yang relevan, tanpa menghapus tag penutup. Beberapa input di tab "Lanjutan" sudah ada yang di-disable dan diberi info "belum selesai di develop", namun ada duplikasi dan struktur JSX yang tidak rapi akibat edit sebelumnya.
 
 Solusi terbaik:
 - Pastikan hanya input level koreksi dan margin yang aktif.
-- Semua input lain di tab "Lanjutan" (padding logo, bentuk padding, radius, custom id, CORS) di-disable dan diberi info "belum beres".
+- Semua input lain di tab "Lanjutan" (padding logo, bentuk padding, radius, custom id, CORS) di-disable dan diberi info "belum selesai di develop".
 - Hapus duplikasi/struktur yang tidak perlu.
 
-Apakah Anda ingin saya merapikan seluruh tab "Lanjutan" agar hanya dua input yang aktif dan sisanya dinonaktifkan dengan info "belum beres"? (Jawab "ya" untuk lanjut, atau sebutkan detail jika ada preferensi lain.)
+Apakah Anda ingin saya merapikan seluruh tab "Lanjutan" agar hanya dua input yang aktif dan sisanya dinonaktifkan dengan info "belum selesai di develop"? (Jawab "ya" untuk lanjut, atau sebutkan detail jika ada preferensi lain.)
 
 TioHaidarHanif: kenapa ada error?
 
@@ -1844,11 +1844,11 @@ GitHub Copilot: Summarized conversation historyMasalah error pada file `QRForm.j
 
 - Komponen `<motion.div>` dan field "Level Koreksi Kesalahan" diulang dua kali.
 - Ada tag SVG `<circle>`, `<line>`, dan penutup `</svg>` yang tidak pada tempatnya di dalam JSX form, sehingga menyebabkan error parsing JSX.
-- Penempatan field dan blok info "belum beres" tidak rapi, menyebabkan tag tidak berpasangan dengan benar.
+- Penempatan field dan blok info "belum selesai di develop" tidak rapi, menyebabkan tag tidak berpasangan dengan benar.
 
 Solusi:
 - Hapus duplikasi `<motion.div>` dan field "Level Koreksi Kesalahan".
-- Pastikan hanya field "Level Koreksi Kesalahan" dan "Quiet Zone (Margin)" yang aktif, field lain di-disable dan diberi info "Belum beres".
+- Pastikan hanya field "Level Koreksi Kesalahan" dan "Quiet Zone (Margin)" yang aktif, field lain di-disable dan diberi info "belum selesai di develop".
 - Pastikan tidak ada tag SVG yang nyasar di dalam form.
 
 Perbaiki struktur JSX di tab "Lanjutan" agar tidak ada tag yang tumpang tindih atau tidak berpasangan. Jika ingin, saya bisa langsung memperbaiki kode tersebut.
@@ -1863,7 +1863,7 @@ Made changes.
 
 
 ```
-Struktur tab "Lanjutan" (advanced) sudah diperbaiki: hanya field "Level Koreksi Kesalahan" dan "Quiet Zone (Margin)" yang aktif, field lain di-disable dan diberi info "Belum beres", serta tag SVG dan duplikasi motion.div yang menyebabkan error sudah dihapus. Silakan cek, error JSX seharusnya sudah hilang.
+Struktur tab "Lanjutan" (advanced) sudah diperbaiki: hanya field "Level Koreksi Kesalahan" dan "Quiet Zone (Margin)" yang aktif, field lain di-disable dan diberi info "belum selesai di develop", serta tag SVG dan duplikasi motion.div yang menyebabkan error sudah dihapus. Silakan cek, error JSX seharusnya sudah hilang.
 
 TioHaidarHanif: ketika menekan tombol download, munculkan modal box yang berisi pertanyaaan "apakahj anda sudah mencoba kalau QR nya berhasil? kasih informasi juga kalau bisa jadi qr tidak terbaca karena text yna terlalu panjang, atau logo nya terlalu besar, jadi sangat disarankan untuk cek dulu apakah bisa di scan atau tidak"
 

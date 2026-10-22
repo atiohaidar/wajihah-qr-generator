@@ -40,7 +40,8 @@ const QRPreview = ({
   logoImage, logoWidth, logoHeight, logoOpacity, logoPadding, logoPaddingStyle, logoPaddingRadius,
   removeQrCodeBehindLogo, qrStyle, eyeRadius, eyeColor, enableCORS, customId,
   logoBg, logoBgWidth, logoBgHeight, logoBgPosition, logoBgX, logoBgY, logoBgObjectFit, logoBgCustomStyle,
-  qrOpacity
+  qrOpacity,
+  bottomText = ''
 }) => {
   // Hidden canvas untuk download/new tab
   const fullCanvasRef = useRef();
@@ -142,6 +143,23 @@ const QRPreview = ({
           />
         </QRErrorBoundary>
       )}
+
+      {/* Teks di bawah QR preview */}
+      {bottomText && bottomText.trim() && (
+        <div style={{
+          marginTop: 10,
+          fontSize: Math.max(13, Math.round((previewSize || size) * 0.05)),
+          fontWeight: '700',
+          color: fgColor && fgColor !== 'transparent' ? fgColor : '#222',
+          textAlign: 'center',
+          maxWidth: (previewSize || size),
+          wordBreak: 'break-word',
+          letterSpacing: '0.02em',
+        }}>
+          {bottomText}
+        </div>
+      )}
+
       {/* Hidden canvas untuk download/new tab, ukuran asli */}
       <div style={{position:'absolute', left:'-9999px', width:0, height:0, overflow:'hidden'}}>
         <QRErrorBoundary>
