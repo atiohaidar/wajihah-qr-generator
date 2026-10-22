@@ -9,17 +9,17 @@ function qrApiDevPlugin() {
       server.middlewares.use(async (req, res, next) => {
         if (req.url && req.url.startsWith('/api/qr')) {
           try {
-            const { generateQrSvg } = await server.ssrLoadModule('/src/utils/qrSvgGenerator.js');
+            const { generateQrSvg } = await import('./functions/api/qr.js');
             const url = new URL(req.url, 'http://localhost:5173');
             const params = url.searchParams;
             const data = params.get('data') || params.get('text') || params.get('value') || 'https://wajihah-qr-generator.pages.dev/';
-            const size = params.get('size') || 350;
-            const quietZone = params.get('quietZone') || 10;
+            const size = params.get('size') || 400;
+            const quietZone = params.get('quietZone') || 25;
             const ecLevel = params.get('ecLevel') || 'H';
             const fgColor = params.get('fgColor') || params.get('fg') || '#000000';
             const bgColor = params.get('bgColor') || params.get('bg') || '#ffffff';
             const qrStyle = params.get('qrStyle') || params.get('style') || 'squares';
-            const eyeRadius = params.get('eyeRadius') || params.get('eye') || 10;
+            const eyeRadius = params.get('eyeRadius') || params.get('eye') || 6;
             const eyeColor = params.get('eyeColor') || fgColor;
             const logo = params.get('logo') || params.get('logoImage') || null;
             const logoWidth = params.get('logoWidth') || null;
