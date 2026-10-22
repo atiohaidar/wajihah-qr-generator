@@ -148,14 +148,16 @@ const QRPreview = ({
       {/* Teks di bawah QR preview */}
       {bottomText && bottomText.trim() && (
         <div style={{
-          marginTop: 10,
-          fontSize: Math.max(13, Math.round((previewSize || size) * 0.05)),
+          marginTop: 12,
+          marginBottom: 4,
+          fontSize: Math.max(14, Math.round((previewSize || size) * 0.052)),
           fontWeight: '700',
+          fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif',
           color: (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor && fgColor !== 'transparent' ? fgColor : '#222'),
           textAlign: 'center',
           maxWidth: (previewSize || size),
           wordBreak: 'break-word',
-          letterSpacing: '0.02em',
+          letterSpacing: '0.01em',
         }}>
           {bottomText}
         </div>

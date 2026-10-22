@@ -41,6 +41,28 @@ function escapeXml(unsafe) {
   });
 }
 
+function wrapTextSvg(text, availableWidth, fontSize) {
+  if (!text) return [];
+  const avgCharWidth = fontSize * 0.58;
+  const maxChars = Math.max(12, Math.floor(availableWidth / avgCharWidth));
+  const words = String(text).trim().split(/\s+/);
+  const lines = [];
+  let cur = '';
+
+  for (const w of words) {
+    if (!cur) {
+      cur = w;
+    } else if ((cur + ' ' + w).length <= maxChars) {
+      cur += ' ' + w;
+    } else {
+      lines.push(cur);
+      cur = w;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
 function roundedRectPath(x, y, w, h, r) {
   const maxR = Math.min(w / 2, h / 2);
   const radius = Math.max(0, Math.min(maxR, r || 0));
@@ -101,11 +123,17 @@ export function generateQrSvg(options = {}) {
   const cellSize = numSize / length;
   const offset = numQuietZone;
 
-  // Resolve bottom text
+  // Resolve bottom text with multi-line word wrapping
   const cleanBottomText = String(bottomText || label || '').trim();
-  const textFontSize = Math.max(14, Math.round(canvasSize * 0.046));
-  const textPadding = cleanBottomText ? Math.round(textFontSize * 1.8) : 0;
-  const totalCanvasHeight = canvasSize + textPadding;
+  const textFontSize = Math.max(15, Math.round(canvasSize * 0.05));
+  const availableWidth = Math.max(100, canvasSize - 28);
+  const textLines = cleanBottomText ? wrapTextSvg(cleanBottomText, availableWidth, textFontSize) : [];
+  const lineHeight = Math.round(textFontSize * 1.35);
+  const textBlockHeight = textLines.length * lineHeight;
+  const topGap = textLines.length > 0 ? Math.round(textFontSize * 0.6) : 0;
+  const bottomGap = textLines.length > 0 ? Math.round(textFontSize * 0.8) : 0;
+  const totalBottomPadding = textLines.length > 0 ? (topGap + textBlockHeight + bottomGap) : 0;
+  const totalCanvasHeight = canvasSize + totalBottomPadding;
 
   // Resolve Logo
   const resolvedLogo = resolveLogo(logoImage);
@@ -135,6 +163,8 @@ export function generateQrSvg(options = {}) {
 
   const isBehindLogo = (row, col) => {
     if (!removeQrCodeBehindLogo || !logoDataUri) return false;
+    const paddingInCells = Math.ceil(Number(logoPadding || 0.1) / cellSize);
+    const snappedPadding = paddingInCells * cellSize;
     const absolute_dxLogo = dxLogo + offset;
     const absolute_dyLogo = dyLogo + offset;
     const cellLeft = Math.round(col * cellSize) + offset;
@@ -144,24 +174,20 @@ export function generateQrSvg(options = {}) {
     const cellRight = cellLeft + w;
     const cellBottom = cellTop + h;
 
-    const paddingPx = Number(logoPadding) <= 1 && Number(logoPadding) > 0
-      ? Number(logoPadding) * Math.max(dWidthLogo, dHeightLogo)
-      : (Number(logoPadding) || 4);
-
     if (logoPaddingStyle === 'circle') {
       const logoCenterX = absolute_dxLogo + dWidthLogo / 2;
       const logoCenterY = absolute_dyLogo + dHeightLogo / 2;
-      const circleRadius = Math.max(dWidthLogo, dHeightLogo) / 2 + paddingPx;
+      const circleRadius = Math.max(dWidthLogo, dHeightLogo) / 2 + snappedPadding;
       const closestX = Math.max(cellLeft, Math.min(logoCenterX, cellRight));
       const closestY = Math.max(cellTop, Math.min(logoCenterY, cellBottom));
       const distanceX = logoCenterX - closestX;
       const distanceY = logoCenterY - closestY;
       return distanceX * distanceX + distanceY * distanceY < circleRadius * circleRadius;
     } else {
-      const logoLeft = absolute_dxLogo - paddingPx;
-      const logoRight = absolute_dxLogo + dWidthLogo + paddingPx;
-      const logoTop = absolute_dyLogo - paddingPx;
-      const logoBottom = absolute_dyLogo + dHeightLogo + paddingPx;
+      const logoLeft = absolute_dxLogo - snappedPadding;
+      const logoRight = absolute_dxLogo + dWidthLogo + snappedPadding;
+      const logoTop = absolute_dyLogo - snappedPadding;
+      const logoBottom = absolute_dyLogo + dHeightLogo + snappedPadding;
       return cellLeft < logoRight && cellRight > logoLeft && cellTop < logoBottom && cellBottom > logoTop;
     }
   };
@@ -189,7 +215,7 @@ export function generateQrSvg(options = {}) {
         if (qrStyle === 'dots') {
           const cx = (x + radius).toFixed(2);
           const cy = (y + radius).toFixed(2);
-          const r = ((radius / 100) * 80).toFixed(2);
+          const r = ((radius / 100) * 75).toFixed(2);
           modulesSvg += `<circle cx="${cx}" cy="${cy}" r="${r}" />\n`;
         } else if (qrStyle === 'fluid') {
           modulesSvg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${(cellSize * 0.35).toFixed(2)}" />\n`;
@@ -239,11 +265,14 @@ export function generateQrSvg(options = {}) {
     svgContent += `<image href="${logoDataUri}" x="${logoX}" y="${logoY}" width="${w}" height="${h}" opacity="${op}" preserveAspectRatio="xMidYMid meet" />\n`;
   }
 
-  // 5. Bottom Text Label (if specified)
-  if (cleanBottomText) {
+  // 5. Bottom Text Label (Multi-line word wrapped)
+  if (textLines.length > 0) {
     const actualTextColor = normalizeColor(bottomTextColor || textColor || actualFg, actualFg);
-    const textY = (canvasSize + (textPadding * 0.58)).toFixed(2);
-    svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${textY}" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.5">${escapeXml(cleanBottomText)}</text>\n`;
+    const startY = canvasSize + topGap + Math.round(textFontSize * 0.82);
+    textLines.forEach((line, idx) => {
+      const lineY = (startY + (idx * lineHeight)).toFixed(2);
+      svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${lineY}" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.2">${escapeXml(line)}</text>\n`;
+    });
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>

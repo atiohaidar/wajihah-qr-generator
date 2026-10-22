@@ -441,21 +441,53 @@ function App() {
                     let exportCanvas = canvas;
                     if (bottomText && bottomText.trim()) {
                       const merged = document.createElement('canvas');
-                      const fontSize = Math.max(16, Math.round(canvas.width * 0.046));
-                      const textPadding = Math.round(fontSize * 1.8);
+                      const fontSize = Math.max(16, Math.round(canvas.width * 0.05));
+                      const fontStr = `700 ${fontSize}px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif`;
+                      
+                      const tempCtx = merged.getContext('2d');
+                      tempCtx.font = fontStr;
+                      const maxTextWidth = canvas.width - 28;
+                      const words = bottomText.trim().split(/\s+/);
+                      const lines = [];
+                      let curLine = '';
+                      for (const w of words) {
+                        const testLine = curLine ? curLine + ' ' + w : w;
+                        if (tempCtx.measureText(testLine).width > maxTextWidth && curLine) {
+                          lines.push(curLine);
+                          curLine = w;
+                        } else {
+                          curLine = testLine;
+                        }
+                      }
+                      if (curLine) lines.push(curLine);
+
+                      const lineHeight = Math.round(fontSize * 1.35);
+                      const textBlockHeight = lines.length * lineHeight;
+                      const topGap = Math.round(fontSize * 0.6);
+                      const bottomGap = Math.round(fontSize * 0.8);
+                      const totalPadding = topGap + textBlockHeight + bottomGap;
+
                       merged.width = canvas.width;
-                      merged.height = canvas.height + textPadding;
+                      merged.height = canvas.height + totalPadding;
                       const ctx = merged.getContext('2d');
                       if (bgColor && bgColor !== 'transparent') {
                         ctx.fillStyle = bgColor;
                         ctx.fillRect(0, 0, merged.width, merged.height);
                       }
+                      ctx.imageSmoothingEnabled = true;
+                      ctx.imageSmoothingQuality = 'high';
                       ctx.drawImage(canvas, 0, 0);
-                      ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+
+                      ctx.font = fontStr;
                       ctx.fillStyle = (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor || '#000000');
                       ctx.textAlign = 'center';
                       ctx.textBaseline = 'middle';
-                      ctx.fillText(bottomText.trim(), merged.width / 2, canvas.height + (textPadding * 0.52));
+
+                      const startY = canvas.height + topGap + Math.round(fontSize * 0.55);
+                      lines.forEach((line, idx) => {
+                        ctx.fillText(line, merged.width / 2, startY + (idx * lineHeight));
+                      });
+
                       exportCanvas = merged;
                     }
                     const link = document.createElement('a');
