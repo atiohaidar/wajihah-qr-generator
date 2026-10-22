@@ -35,7 +35,8 @@ const QRForm = ({
   // Handler functions for logo background
   handleLogoBgWidth, handleLogoBgHeight,
   // Bottom text under QR code
-  bottomText, setBottomText
+  bottomText, setBottomText,
+  bottomTextColor, setBottomTextColor
 }) => {
   // Simpan ukuran logo sebelum toggle background
   const prevLogoSize = useRef({ width: logoWidth, height: logoHeight });
@@ -476,6 +477,36 @@ const QRForm = ({
                   <small style={{ color: '#666', fontSize: 12, marginTop: 4, display: 'block' }}>
                     Tulisan ini akan muncul langsung di bawah gambar QR dan juga otomatis masuk ke parameter API (&bottomText=...).
                   </small>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                    <label style={{ fontSize: 13, color: '#444', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                      <span style={colorPreviewStyle(bottomTextColor || fgColor)}></span>
+                      Warna Tulisan:
+                    </label>
+                    <input
+                      type="color"
+                      value={bottomTextColor || fgColor}
+                      onChange={(e) => setBottomTextColor && setBottomTextColor(e.target.value)}
+                      style={{ width: 40, height: 28, padding: 0, border: '1px solid #ddd', borderRadius: 4, cursor: 'pointer' }}
+                    />
+                    {bottomTextColor && bottomTextColor !== fgColor && (
+                      <button
+                        type="button"
+                        onClick={() => setBottomTextColor && setBottomTextColor('')}
+                        style={{
+                          padding: '3px 8px',
+                          fontSize: 12,
+                          borderRadius: 4,
+                          background: '#f1f3f5',
+                          border: '1px solid #ddd',
+                          color: '#666',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Reset ke warna QR
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div style={{ marginBottom: 20 }}>
                   <label style={labelStyle}>Ukuran Logo</label>
@@ -964,6 +995,40 @@ const QRForm = ({
                       onChange={(e) => setEyeColor(e.target.value)}
                       style={{ width: '100%', height: '40px' }}
                     />
+                  </div>
+
+                  <div style={{ flex: '1 1 45%', minWidth: '120px' }}>
+                    <label style={labelStyle}>
+                      Warna Tulisan Bawah
+                      <span style={colorPreviewStyle(bottomTextColor || fgColor)}></span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        type="color"
+                        value={bottomTextColor || fgColor}
+                        onChange={(e) => setBottomTextColor && setBottomTextColor(e.target.value)}
+                        style={{ flex: 1, height: '40px' }}
+                      />
+                      {bottomTextColor && bottomTextColor !== fgColor && (
+                        <button
+                          type="button"
+                          onClick={() => setBottomTextColor && setBottomTextColor('')}
+                          style={{
+                            padding: '6px 10px',
+                            fontSize: '12px',
+                            borderRadius: '6px',
+                            background: '#f1f3f5',
+                            border: '1px solid #ddd',
+                            color: '#666',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                          title="Reset ke warna QR"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 

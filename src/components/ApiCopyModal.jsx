@@ -20,6 +20,7 @@ const ApiCopyModal = ({
   eyeRadius,
   eyeColor,
   bottomText,
+  bottomTextColor,
 }) => {
   if (!isOpen) return null;
 
@@ -64,12 +65,13 @@ const ApiCopyModal = ({
     if (logoWidth && logoWidth !== 128) params.push(`logoWidth=${logoWidth}`);
     if (logoHeight && logoHeight !== 128) params.push(`logoHeight=${logoHeight}`);
     if (bottomText && bottomText.trim()) params.push(`bottomText=${encodeURIComponent(bottomText.trim())}`);
+    if (bottomTextColor && bottomTextColor !== fgColor) params.push(`textColor=${formatColorParam(bottomTextColor)}`);
     if (!removeQrCodeBehindLogo) params.push(`removeBehindLogo=false`);
 
     return params.join('&');
   }, [
     size, fgColor, bgColor, eyeColor, cleanLogo, qrStyle, eyeRadius,
-    ecLevel, quietZone, logoWidth, logoHeight, bottomText, removeQrCodeBehindLogo
+    ecLevel, quietZone, logoWidth, logoHeight, bottomText, bottomTextColor, removeQrCodeBehindLogo
   ]);
 
   // Base API URL ending with data=

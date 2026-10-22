@@ -80,6 +80,8 @@ export function generateQrSvg(options = {}) {
     removeQrCodeBehindLogo = true,
     bottomText = '',
     label = bottomText,
+    bottomTextColor = null,
+    textColor = bottomTextColor,
   } = options;
 
   const validEcLevels = ['L', 'M', 'Q', 'H'];
@@ -239,8 +241,9 @@ export function generateQrSvg(options = {}) {
 
   // 5. Bottom Text Label (if specified)
   if (cleanBottomText) {
+    const actualTextColor = normalizeColor(bottomTextColor || textColor || actualFg, actualFg);
     const textY = (canvasSize + (textPadding * 0.58)).toFixed(2);
-    svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${textY}" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualFg}" letter-spacing="0.5">${escapeXml(cleanBottomText)}</text>\n`;
+    svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${textY}" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.5">${escapeXml(cleanBottomText)}</text>\n`;
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>

@@ -41,7 +41,8 @@ const QRPreview = ({
   removeQrCodeBehindLogo, qrStyle, eyeRadius, eyeColor, enableCORS, customId,
   logoBg, logoBgWidth, logoBgHeight, logoBgPosition, logoBgX, logoBgY, logoBgObjectFit, logoBgCustomStyle,
   qrOpacity,
-  bottomText = ''
+  bottomText = '',
+  bottomTextColor = null
 }) => {
   // Hidden canvas untuk download/new tab
   const fullCanvasRef = useRef();
@@ -150,7 +151,7 @@ const QRPreview = ({
           marginTop: 10,
           fontSize: Math.max(13, Math.round((previewSize || size) * 0.05)),
           fontWeight: '700',
-          color: fgColor && fgColor !== 'transparent' ? fgColor : '#222',
+          color: (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor && fgColor !== 'transparent' ? fgColor : '#222'),
           textAlign: 'center',
           maxWidth: (previewSize || size),
           wordBreak: 'break-word',

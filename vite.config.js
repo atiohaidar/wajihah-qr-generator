@@ -29,6 +29,7 @@ function qrApiDevPlugin() {
             const logoPaddingStyle = params.get('logoPaddingStyle') || 'circle';
             const removeBehindLogo = params.get('removeBehindLogo') !== 'false';
             const bottomText = params.get('bottomText') || params.get('label') || '';
+            const bottomTextColor = params.get('bottomTextColor') || params.get('textColor') || null;
 
             const svg = generateQrSvg({
               data,
@@ -48,6 +49,7 @@ function qrApiDevPlugin() {
               logoPaddingStyle,
               removeQrCodeBehindLogo: removeBehindLogo,
               bottomText,
+              bottomTextColor,
             });
 
             res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');

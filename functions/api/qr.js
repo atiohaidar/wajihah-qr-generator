@@ -80,6 +80,8 @@ export function generateQrSvg(options = {}) {
     removeQrCodeBehindLogo = true,
     bottomText = '',
     label = bottomText,
+    bottomTextColor = null,
+    textColor = bottomTextColor,
   } = options;
 
   const validEcLevels = ['L', 'M', 'Q', 'H'];
@@ -229,8 +231,9 @@ export function generateQrSvg(options = {}) {
   }
 
   if (cleanBottomText) {
+    const actualTextColor = normalizeColor(bottomTextColor || textColor || actualFg, actualFg);
     const textY = (canvasSize + (textPadding * 0.58)).toFixed(2);
-    svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${textY}" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualFg}" letter-spacing="0.5">${escapeXml(cleanBottomText)}</text>\n`;
+    svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${textY}" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.5">${escapeXml(cleanBottomText)}</text>\n`;
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -272,6 +275,7 @@ export async function onRequest(context) {
   const logoPaddingStyle = params.get('logoPaddingStyle') || 'circle';
   const removeQrCodeBehindLogo = params.get('removeBehindLogo') !== 'false';
   const bottomText = params.get('bottomText') || params.get('label') || '';
+  const bottomTextColor = params.get('bottomTextColor') || params.get('textColor') || null;
 
   try {
     const svg = generateQrSvg({
@@ -292,6 +296,7 @@ export async function onRequest(context) {
       logoPaddingStyle,
       removeQrCodeBehindLogo,
       bottomText,
+      bottomTextColor,
     });
 
     return new Response(svg, {

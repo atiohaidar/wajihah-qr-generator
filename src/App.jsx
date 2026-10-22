@@ -21,6 +21,7 @@ function App() {
   const [showScanner, setShowScanner] = useState(false);
   const [showApiModal, setShowApiModal] = useState(false);
   const [bottomText, setBottomText] = useState(getInitial('bottomText', ''));
+  const [bottomTextColor, setBottomTextColor] = useState(getInitial('bottomTextColor', ''));
 
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [qrOpacity, setQrOpacity] = useState(getInitial('qrOpacity', 1));
@@ -98,6 +99,7 @@ function App() {
   useEffect(() => { localStorage.setItem('qrform_customId', customId); }, [customId]);
   useEffect(() => { localStorage.setItem('qrform_logoBg', logoBg); }, [logoBg]);
   useEffect(() => { localStorage.setItem('qrform_bottomText', bottomText); }, [bottomText]);
+  useEffect(() => { localStorage.setItem('qrform_bottomTextColor', bottomTextColor); }, [bottomTextColor]);
 
   // Sync logo natural size
   useEffect(() => {
@@ -323,6 +325,7 @@ function App() {
                 logoBgCustomStyle={logoBgCustomStyle}
                 qrOpacity={qrOpacity}
                 bottomText={bottomText}
+                bottomTextColor={bottomTextColor}
               />
               <div style={{
                 marginTop: 20, 
@@ -449,7 +452,7 @@ function App() {
                       }
                       ctx.drawImage(canvas, 0, 0);
                       ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-                      ctx.fillStyle = fgColor || '#000000';
+                      ctx.fillStyle = (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor || '#000000');
                       ctx.textAlign = 'center';
                       ctx.textBaseline = 'middle';
                       ctx.fillText(bottomText.trim(), merged.width / 2, canvas.height + (textPadding * 0.52));
@@ -619,6 +622,7 @@ function App() {
               eyeRadius={eyeRadius}
               eyeColor={eyeColor}
               bottomText={bottomText}
+              bottomTextColor={bottomTextColor}
             />
             
           </div>
@@ -663,6 +667,7 @@ function App() {
               handleLogoBgWidth={handleLogoBgWidth} handleLogoBgHeight={handleLogoBgHeight}
               qrOpacity={qrOpacity} setQrOpacity={setQrOpacity}
               bottomText={bottomText} setBottomText={setBottomText}
+              bottomTextColor={bottomTextColor} setBottomTextColor={setBottomTextColor}
             />
             
           </div>
