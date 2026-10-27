@@ -22,6 +22,7 @@ const ApiCopyModal = ({
   bottomText,
   bottomTextColor,
   logoPlacement = 'center',
+  captionLogoSize = 32,
 }) => {
   if (!isOpen) return null;
 
@@ -60,19 +61,22 @@ const ApiCopyModal = ({
     if (eyeColor && eyeColor !== fgColor) params.push(`eyeColor=${formatColorParam(eyeColor)}`);
     if (cleanLogo) params.push(`logo=${encodeURIComponent(cleanLogo)}`);
     if (logoPlacement && logoPlacement !== 'center') params.push(`logoPlacement=${logoPlacement}`);
+    if (logoPlacement === 'bottom' && captionLogoSize) params.push(`captionLogoSize=${captionLogoSize}`);
     if (qrStyle && qrStyle !== 'squares') params.push(`style=${qrStyle}`);
-    if (eyeRadius && eyeRadius !== 10) params.push(`eye=${eyeRadius}`);
+    if (eyeRadius !== undefined && eyeRadius !== null && eyeRadius !== '') params.push(`eyeRadius=${eyeRadius}`);
     if (ecLevel && ecLevel !== 'H') params.push(`ecLevel=${ecLevel}`);
     if (quietZone && quietZone !== 10) params.push(`quietZone=${quietZone}`);
-    if (logoWidth && logoWidth !== 128) params.push(`logoWidth=${logoWidth}`);
-    if (logoHeight && logoHeight !== 128) params.push(`logoHeight=${logoHeight}`);
+    if (logoPlacement !== 'bottom') {
+      if (logoWidth && logoWidth !== 128) params.push(`logoWidth=${logoWidth}`);
+      if (logoHeight && logoHeight !== 128) params.push(`logoHeight=${logoHeight}`);
+    }
     if (bottomText && bottomText.trim()) params.push(`bottomText=${encodeURIComponent(bottomText.trim())}`);
     if (bottomTextColor && bottomTextColor !== fgColor) params.push(`textColor=${formatColorParam(bottomTextColor)}`);
     if (!removeQrCodeBehindLogo) params.push(`removeBehindLogo=false`);
 
     return params.join('&');
   }, [
-    size, fgColor, bgColor, eyeColor, cleanLogo, logoPlacement, qrStyle, eyeRadius,
+    size, fgColor, bgColor, eyeColor, cleanLogo, logoPlacement, captionLogoSize, qrStyle, eyeRadius,
     ecLevel, quietZone, logoWidth, logoHeight, bottomText, bottomTextColor, removeQrCodeBehindLogo
   ]);
 

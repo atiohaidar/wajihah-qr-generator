@@ -44,10 +44,11 @@ const QRPreview = ({
   bottomText = '',
   bottomTextColor = null,
   logoPlacement = 'center',
+  captionLogoSize = 32,
 }) => {
   // Hidden canvas untuk download/new tab
   const fullCanvasRef = useRef();
-  useEffect(() => {}, [value, size, fgColor, bgColor, ecLevel, quietZone, logoImage, logoWidth, logoHeight, logoOpacity, logoPadding, logoPaddingStyle, logoPaddingRadius, removeQrCodeBehindLogo, qrStyle, eyeRadius, eyeColor, enableCORS, logoBg, logoBgWidth, logoBgHeight, logoBgPosition, logoBgX, logoBgY, logoBgObjectFit, logoBgCustomStyle, qrOpacity, logoPlacement]);
+  useEffect(() => {}, [value, size, fgColor, bgColor, ecLevel, quietZone, logoImage, logoWidth, logoHeight, logoOpacity, logoPadding, logoPaddingStyle, logoPaddingRadius, removeQrCodeBehindLogo, qrStyle, eyeRadius, eyeColor, enableCORS, logoBg, logoBgWidth, logoBgHeight, logoBgPosition, logoBgX, logoBgY, logoBgObjectFit, logoBgCustomStyle, qrOpacity, logoPlacement, captionLogoSize]);
   // Batasi panjang data untuk mencegah overflow
   const maxLength = {
     'L': 2953,
@@ -161,19 +162,23 @@ const QRPreview = ({
           padding: '2px 8px',
           boxSizing: 'border-box'
         }}>
-          {logoPlacement === 'bottom' && logoImage && (
-            <img
-              src={logoImage}
-              alt="Logo"
-              style={{
-                width: Math.max(22, Math.round((previewSize || size) * 0.08)),
-                height: Math.max(22, Math.round((previewSize || size) * 0.08)),
-                objectFit: 'contain',
-                flexShrink: 0,
-                opacity: logoOpacity
-              }}
-            />
-          )}
+          {logoPlacement === 'bottom' && logoImage && (() => {
+            const previewScale = (previewSize || size) / size;
+            const renderedSize = Math.max(16, Math.round(Number(captionLogoSize || 32) * previewScale));
+            return (
+              <img
+                src={logoImage}
+                alt="Logo"
+                style={{
+                  width: renderedSize,
+                  height: renderedSize,
+                  objectFit: 'contain',
+                  flexShrink: 0,
+                  opacity: logoOpacity
+                }}
+              />
+            );
+          })()}
           {bottomText && bottomText.trim() && (
             <span style={{
               fontSize: Math.max(14, Math.round((previewSize || size) * 0.052)),

@@ -106,6 +106,8 @@ export function generateQrSvg(options = {}) {
     textColor = bottomTextColor,
     logoPlacement = 'center',
     logoPos = logoPlacement,
+    captionLogoSize = null,
+    bottomLogoSize: customBottomLogoSize = captionLogoSize,
   } = options;
 
   const validEcLevels = ['L', 'M', 'Q', 'H'];
@@ -132,7 +134,9 @@ export function generateQrSvg(options = {}) {
   const cleanBottomText = String(bottomText || label || '').trim();
   const isBottomLogo = (logoPlacement === 'bottom' || logoPos === 'bottom') && !!logoDataUri;
   const textFontSize = Math.max(16, Math.round(canvasSize * 0.048));
-  const bottomLogoSize = isBottomLogo ? Math.max(26, Math.round(textFontSize * 1.5)) : 0;
+  const bottomLogoSize = isBottomLogo 
+    ? Math.max(16, Number(customBottomLogoSize || captionLogoSize || (Number(logoWidth) <= 80 ? logoWidth : 0) || Math.round(textFontSize * 1.5))) 
+    : 0;
   const logoGap = isBottomLogo && cleanBottomText ? Math.round(textFontSize * 0.45) : 0;
   const availableWidth = Math.max(80, canvasSize - 32 - (isBottomLogo ? (bottomLogoSize + logoGap) : 0));
   const textLines = cleanBottomText ? wrapTextSvg(cleanBottomText, availableWidth, textFontSize) : [];

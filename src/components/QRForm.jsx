@@ -37,8 +37,9 @@ const QRForm = ({
   // Bottom text under QR code
   bottomText, setBottomText,
   bottomTextColor, setBottomTextColor,
-  // Logo placement ('center' | 'bottom')
-  logoPlacement = 'center', setLogoPlacement
+  // Logo placement ('center' | 'bottom') & caption logo size
+  logoPlacement = 'center', setLogoPlacement,
+  captionLogoSize = 32, setCaptionLogoSize
 }) => {
   // Simpan ukuran logo sebelum toggle background
   const prevLogoSize = useRef({ width: logoWidth, height: logoHeight });
@@ -510,20 +511,79 @@ const QRForm = ({
                     )}
                   </div>
                 </div>
-                <div style={{ marginBottom: 20 }}>
-                  <label style={labelStyle}>Ukuran Logo</label>
-                  <input
-                    type="range"
-                    min="24"
-                    max={Math.floor(size / 1.5)}
-                    value={logoWidth}
-                    onChange={e => handleLogoWidth(Number(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                  <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
-                    {logoWidth} x {logoHeight} px
+                {logoPlacement === 'bottom' ? (
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <label style={labelStyle}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2980b9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, verticalAlign: 'middle' }}>
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                          <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        Ukuran Logo (Samping Caption)
+                      </label>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#2980b9' }}>
+                        {captionLogoSize || 32} px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="16"
+                      max="72"
+                      step="2"
+                      value={captionLogoSize || 32}
+                      onChange={e => setCaptionLogoSize && setCaptionLogoSize(Number(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                      {[
+                        { label: 'Kecil (22px)', val: 22 },
+                        { label: 'Standar (32px)', val: 32 },
+                        { label: 'Besar (44px)', val: 44 },
+                        { label: 'Ekstra (56px)', val: 56 }
+                      ].map(p => (
+                        <button
+                          key={p.val}
+                          type="button"
+                          onClick={() => setCaptionLogoSize && setCaptionLogoSize(p.val)}
+                          style={{
+                            padding: '4px 10px',
+                            fontSize: 12,
+                            borderRadius: 6,
+                            border: `1px solid ${(captionLogoSize || 32) === p.val ? '#3498db' : '#dee2e6'}`,
+                            background: (captionLogoSize || 32) === p.val ? '#ebf5fb' : '#ffffff',
+                            color: (captionLogoSize || 32) === p.val ? '#2980b9' : '#555',
+                            fontWeight: (captionLogoSize || 32) === p.val ? 600 : 400,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#777', marginTop: 6 }}>
+                      Logo otomatis disejajarkan secara simetris dan proporsional dengan tulisan caption.
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <label style={labelStyle}>Ukuran Logo di Tengah QR</label>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#666' }}>
+                        {logoWidth} x {logoHeight} px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="24"
+                      max={Math.floor(size / 1.5)}
+                      value={logoWidth}
+                      onChange={e => handleLogoWidth(Number(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                )}
 
 
                 <div style={{ marginBottom: '20px' }}>
@@ -565,7 +625,10 @@ const QRForm = ({
                             boxShadow: logoPlacement === 'center' ? '0 2px 6px rgba(52, 152, 219, 0.15)' : 'none'
                           }}
                         >
-                          <span style={{ fontSize: 20 }}>🎯</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={logoPlacement === 'center' ? '#2980b9' : '#6c757d'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <circle cx="12" cy="12" r="3.5"></circle>
+                          </svg>
                           <div>
                             <div style={{ fontWeight: 600, fontSize: 13, color: logoPlacement === 'center' ? '#2980b9' : '#333' }}>
                               Di Tengah QR
@@ -591,7 +654,12 @@ const QRForm = ({
                             boxShadow: logoPlacement === 'bottom' ? '0 2px 6px rgba(52, 152, 219, 0.15)' : 'none'
                           }}
                         >
-                          <span style={{ fontSize: 20 }}>🏷️</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={logoPlacement === 'bottom' ? '#2980b9' : '#6c757d'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <rect x="3" y="13" width="7" height="7" rx="1.5"></rect>
+                            <line x1="13" y1="14.5" x2="21" y2="14.5"></line>
+                            <line x1="13" y1="18.5" x2="19" y2="18.5"></line>
+                            <rect x="3" y="3" width="18" height="7" rx="1.5" strokeDasharray="2 2"></rect>
+                          </svg>
                           <div>
                             <div style={{ fontWeight: 600, fontSize: 13, color: logoPlacement === 'bottom' ? '#2980b9' : '#333' }}>
                               Di Kiri Tulisan Caption
@@ -605,19 +673,31 @@ const QRForm = ({
 
                       {logoPlacement === 'bottom' && (
                         <div style={{
-                          marginTop: 8,
+                          marginTop: 10,
                           fontSize: 12,
                           color: '#27ae60',
                           background: '#eafaf1',
-                          padding: '8px 12px',
-                          borderRadius: 6,
-                          lineHeight: 1.4,
+                          padding: '10px 12px',
+                          borderRadius: 8,
+                          lineHeight: 1.5,
                           border: '1px solid #c3e6cb'
                         }}>
-                          ✨ <b>Mode Bersih & Rapi:</b> Logo ditaruh di sebelah kiri tulisan caption di bawah QR. QR code di tengah jadi utuh tanpa bolong, sehingga sangat mudah di-scan!
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <div>
+                              <b>Mode Bersih & Rapi:</b> Logo diletakkan di sebelah kiri tulisan caption di bawah QR. Modul QR di tengah tetap utuh tanpa bolong sehingga 100% mudah di-scan.
+                            </div>
+                          </div>
                           {!bottomText && (
-                            <div style={{ color: '#d35400', marginTop: 4, fontWeight: 500 }}>
-                              💡 Masukkan form <b>Tulisan di Bawah QR Code</b> di atas agar teks bersanding di sebelah kanan logo.
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#d35400', marginTop: 8, fontWeight: 500 }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d35400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                              </svg>
+                              <span>Isi form <b>Tulisan di Bawah QR Code</b> di atas agar teks bersanding di sebelah kanan logo.</span>
                             </div>
                           )}
                         </div>

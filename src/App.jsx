@@ -23,6 +23,7 @@ function App() {
   const [bottomText, setBottomText] = useState(getInitial('bottomText', ''));
   const [bottomTextColor, setBottomTextColor] = useState(getInitial('bottomTextColor', ''));
   const [logoPlacement, setLogoPlacement] = useState(getInitial('logoPlacement', 'center'));
+  const [captionLogoSize, setCaptionLogoSize] = useState(getInitial('captionLogoSize', 32));
 
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [qrOpacity, setQrOpacity] = useState(getInitial('qrOpacity', 1));
@@ -102,6 +103,7 @@ function App() {
   useEffect(() => { localStorage.setItem('qrform_bottomText', bottomText); }, [bottomText]);
   useEffect(() => { localStorage.setItem('qrform_bottomTextColor', bottomTextColor); }, [bottomTextColor]);
   useEffect(() => { localStorage.setItem('qrform_logoPlacement', logoPlacement); }, [logoPlacement]);
+  useEffect(() => { localStorage.setItem('qrform_captionLogoSize', captionLogoSize); }, [captionLogoSize]);
 
   // Sync logo natural size
   useEffect(() => {
@@ -129,26 +131,97 @@ function App() {
     };
   }, [logoImage, size]);
 
-  // Helper untuk membuat canvas gabungan yang berisi QR dan caption/logo bawah
+  // Helper untuk memuat gambar secara aman (mendukung relative path, external URL, dan data/blob URI)
+  const loadImgSafe = (src) => {
+    return new Promise((resolve) => {
+      if (!src) return resolve(null);
+      const img = new window.Image();
+      if (typeof src === 'string' && src.startsWith('http') && !src.startsWith(window.location.origin)) {
+        img.crossOrigin = 'anonymous';
+      }
+      img.onload = () => resolve(img);
+      img.onerror = () => {
+        if (img.crossOrigin) {
+          const fallback = new window.Image();
+          fallback.onload = () => resolve(fallback);
+          fallback.onerror = () => resolve(null);
+          fallback.src = src;
+        } else {
+          resolve(null);
+        }
+      };
+      img.src = src;
+      if (img.complete && img.naturalWidth) {
+        resolve(img);
+      }
+    });
+  };
+
+  // Helper untuk melakukan multi-step downsampling agar logo beresolusi tinggi tidak pecah/blur saat diperkecil
+  const getCrispLogoCanvas = (img, targetWidth, targetHeight) => {
+    const origWidth = img.naturalWidth || img.width;
+    const origHeight = img.naturalHeight || img.height;
+    if (!origWidth || !origHeight || targetWidth <= 0 || targetHeight <= 0) return img;
+    if (targetWidth >= origWidth && targetHeight >= origHeight) return img;
+
+    // Stepped downscale (50% steps) dengan high quality smoothing
+    let curWidth = origWidth;
+    let curHeight = origHeight;
+    let canvas = document.createElement('canvas');
+    canvas.width = curWidth;
+    canvas.height = curHeight;
+    let ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, curWidth, curHeight);
+
+    while (curWidth * 0.5 >= targetWidth && curHeight * 0.5 >= targetHeight) {
+      curWidth = Math.round(curWidth * 0.5);
+      curHeight = Math.round(curHeight * 0.5);
+      const nextCanvas = document.createElement('canvas');
+      nextCanvas.width = curWidth;
+      nextCanvas.height = curHeight;
+      const nextCtx = nextCanvas.getContext('2d');
+      nextCtx.imageSmoothingEnabled = true;
+      nextCtx.imageSmoothingQuality = 'high';
+      nextCtx.drawImage(canvas, 0, 0, curWidth, curHeight);
+      canvas = nextCanvas;
+    }
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = targetWidth;
+    finalCanvas.height = targetHeight;
+    const finalCtx = finalCanvas.getContext('2d');
+    finalCtx.imageSmoothingEnabled = true;
+    finalCtx.imageSmoothingQuality = 'high';
+    finalCtx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+    return finalCanvas;
+  };
+
+  // Helper untuk membuat canvas gabungan yang berisi QR dan caption/logo bawah dengan kualitas ultra-tajam (Ultra HD)
   const getExportCanvas = async (sourceCanvas) => {
     if (!sourceCanvas) return null;
     const hasText = !!(bottomText && bottomText.trim());
     const hasBottomLogo = logoPlacement === 'bottom' && !!logoImage;
+    const hasCenterLogo = logoPlacement === 'center' && !!logoImage;
 
-    if (!hasText && !hasBottomLogo) {
-      return sourceCanvas;
-    }
+    const baseWidth = sourceCanvas.width;
+    const baseHeight = sourceCanvas.height;
 
-    const merged = document.createElement('canvas');
-    const fontSize = Math.max(16, Math.round(sourceCanvas.width * 0.05));
+    // Otomatis tentukan skala ekspor agar resolusi gambar selalu Ultra HD (minimum 1200px - 1400px),
+    // sehingga logo kecil maupun besar tidak akan pernah pecah atau buram
+    const exportScale = Math.max(3, Math.ceil(1200 / (baseWidth || 350)));
+
+    const fontSize = Math.max(16, Math.round(baseWidth * 0.052));
     const fontStr = `700 ${fontSize}px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif`;
 
-    const tempCtx = merged.getContext('2d');
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
     tempCtx.font = fontStr;
 
-    const bottomLogoSize = hasBottomLogo ? Math.max(26, Math.round(fontSize * 1.5)) : 0;
-    const logoGap = hasBottomLogo && hasText ? Math.round(fontSize * 0.45) : 0;
-    const maxTextWidth = Math.max(80, sourceCanvas.width - 28 - (hasBottomLogo ? (bottomLogoSize + logoGap) : 0));
+    const bottomLogoSize = hasBottomLogo ? Math.max(20, Number(captionLogoSize) || Math.max(32, Math.round(fontSize * 1.8))) : 0;
+    const logoGap = hasBottomLogo && hasText ? Math.round(fontSize * 0.5) : 0;
+    const maxTextWidth = Math.max(80, baseWidth - 28 - (hasBottomLogo ? (bottomLogoSize + logoGap) : 0));
 
     const lines = [];
     if (hasText) {
@@ -169,65 +242,131 @@ function App() {
     const lineHeight = Math.round(fontSize * 1.35);
     const textBlockHeight = lines.length * lineHeight;
     const totalContentHeight = Math.max(bottomLogoSize, textBlockHeight);
-    const topGap = Math.round(fontSize * 0.65);
-    const bottomGap = Math.round(fontSize * 0.8);
-    const totalPadding = topGap + totalContentHeight + bottomGap;
+    const topGap = (hasText || hasBottomLogo) ? Math.round(fontSize * 0.7) : 0;
+    const bottomGap = (hasText || hasBottomLogo) ? Math.round(fontSize * 0.85) : 0;
+    const totalPadding = (hasText || hasBottomLogo) ? (topGap + totalContentHeight + bottomGap) : 0;
 
-    merged.width = sourceCanvas.width;
-    merged.height = sourceCanvas.height + totalPadding;
+    const totalBaseWidth = baseWidth;
+    const totalBaseHeight = baseHeight + totalPadding;
+
+    const merged = document.createElement('canvas');
+    merged.width = Math.round(totalBaseWidth * exportScale);
+    merged.height = Math.round(totalBaseHeight * exportScale);
     const ctx = merged.getContext('2d');
 
     if (bgColor && bgColor !== 'transparent') {
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, merged.width, merged.height);
     }
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(sourceCanvas, 0, 0);
 
+    // Gambar QR code dengan crisp sampling (tidak blur)
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sourceCanvas, 0, 0, Math.round(baseWidth * exportScale), Math.round(baseHeight * exportScale));
+
+    // Muat logo asli resolusi tinggi
     let loadedLogo = null;
-    if (hasBottomLogo) {
+    if (hasBottomLogo || hasCenterLogo) {
       try {
-        loadedLogo = await new Promise((resolve) => {
-          const img = new window.Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => resolve(img);
-          img.onerror = () => resolve(null);
-          img.src = logoImage;
-        });
+        loadedLogo = await loadImgSafe(logoImage);
       } catch {}
     }
 
-    ctx.font = fontStr;
-    ctx.fillStyle = (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor || '#000000');
-    ctx.textBaseline = 'middle';
+    // Jika mode logo tengah, gambar ulang logo di atas canvas ekspor dengan resolusi ultra-tajam (menghilangkan efek kotak-kotak/pecah)
+    if (hasCenterLogo && loadedLogo) {
+      const scaledLogoW = Math.round((logoWidth || 100) * exportScale);
+      const scaledLogoH = Math.round((logoHeight || 100) * exportScale);
+      const logoX = Math.round(((baseWidth * exportScale) - scaledLogoW) / 2);
+      const logoY = Math.round(((baseHeight * exportScale) - scaledLogoH) / 2);
 
+      // Gambar background/padding logo jika ada
+      if (logoPadding && logoPadding > 0) {
+        const scaledPadding = Math.round(logoPadding * exportScale);
+        const padX = logoX - scaledPadding;
+        const padY = logoY - scaledPadding;
+        const padW = scaledLogoW + (2 * scaledPadding);
+        const padH = scaledLogoH + (2 * scaledPadding);
+        ctx.save();
+        ctx.fillStyle = (bgColor && bgColor !== 'transparent') ? bgColor : '#ffffff';
+        ctx.beginPath();
+        if (logoPaddingStyle === 'circle') {
+          ctx.ellipse(padX + padW / 2, padY + padH / 2, padW / 2, padH / 2, 0, 0, 2 * Math.PI);
+        } else {
+          const padRadius = Math.round((logoPaddingRadius || 0) * exportScale);
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(padX, padY, padW, padH, padRadius);
+          } else {
+            ctx.rect(padX, padY, padW, padH);
+          }
+        }
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.globalAlpha = Number(logoOpacity) || 1;
+      const crispCenterLogo = getCrispLogoCanvas(loadedLogo, scaledLogoW, scaledLogoH);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(crispCenterLogo, logoX, logoY, scaledLogoW, scaledLogoH);
+      ctx.restore();
+    }
+
+    // Jika mode logo samping caption di bawah QR
     if (hasBottomLogo && loadedLogo) {
       let maxLineWidth = 0;
       lines.forEach(l => {
-        const w = ctx.measureText(l).width;
+        const w = tempCtx.measureText(l).width;
         if (w > maxLineWidth) maxLineWidth = w;
       });
 
       const totalRowWidth = bottomLogoSize + (lines.length > 0 ? (logoGap + maxLineWidth) : 0);
-      const startX = Math.max(14, Math.round((merged.width - totalRowWidth) / 2));
-      const logoY = Math.round(sourceCanvas.height + topGap + (totalContentHeight - bottomLogoSize) / 2);
+      const startX = Math.max(14, Math.round((baseWidth - totalRowWidth) / 2));
+      const logoY = Math.round(baseHeight + topGap + (totalContentHeight - bottomLogoSize) / 2);
 
-      ctx.drawImage(loadedLogo, startX, logoY, bottomLogoSize, bottomLogoSize);
+      const scaledLogoSize = Math.round(bottomLogoSize * exportScale);
+
+      let drawW = scaledLogoSize;
+      let drawH = scaledLogoSize;
+      const natW = loadedLogo.naturalWidth || loadedLogo.width || 1;
+      const natH = loadedLogo.naturalHeight || loadedLogo.height || 1;
+      if (natW > natH) {
+        drawH = Math.max(16, Math.round(scaledLogoSize * (natH / natW)));
+      } else if (natH > natW) {
+        drawW = Math.max(16, Math.round(scaledLogoSize * (natW / natH)));
+      }
+
+      const crispLogo = getCrispLogoCanvas(loadedLogo, drawW, drawH);
+      const drawX = Math.round(startX * exportScale) + Math.round((scaledLogoSize - drawW) / 2);
+      const drawY = Math.round(logoY * exportScale) + Math.round((scaledLogoSize - drawH) / 2);
+
+      ctx.save();
+      ctx.globalAlpha = Number(logoOpacity) || 1;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(crispLogo, drawX, drawY, drawW, drawH);
+      ctx.restore();
 
       if (lines.length > 0) {
+        ctx.font = `700 ${Math.round(fontSize * exportScale)}px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif`;
+        ctx.fillStyle = (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor || '#000000');
+        ctx.textBaseline = 'middle';
         ctx.textAlign = 'left';
-        const textX = startX + bottomLogoSize + logoGap;
-        const startY = sourceCanvas.height + topGap + ((totalContentHeight - textBlockHeight) / 2) + Math.round(fontSize * 0.55);
+        const textX = Math.round((startX + bottomLogoSize + logoGap) * exportScale);
+        const startY = Math.round((baseHeight + topGap + ((totalContentHeight - textBlockHeight) / 2) + Math.round(fontSize * 0.55)) * exportScale);
+        const scaledLineHeight = Math.round(lineHeight * exportScale);
         lines.forEach((line, idx) => {
-          ctx.fillText(line, textX, startY + (idx * lineHeight));
+          ctx.fillText(line, textX, startY + (idx * scaledLineHeight));
         });
       }
     } else if (lines.length > 0) {
+      ctx.font = `700 ${Math.round(fontSize * exportScale)}px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif`;
+      ctx.fillStyle = (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor || '#000000');
+      ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
-      const startY = sourceCanvas.height + topGap + Math.round(fontSize * 0.55);
+      const startY = Math.round((baseHeight + topGap + Math.round(fontSize * 0.55)) * exportScale);
+      const scaledLineHeight = Math.round(lineHeight * exportScale);
       lines.forEach((line, idx) => {
-        ctx.fillText(line, merged.width / 2, startY + (idx * lineHeight));
+        ctx.fillText(line, merged.width / 2, startY + (idx * scaledLineHeight));
       });
     }
 
@@ -434,6 +573,7 @@ function App() {
                 bottomText={bottomText}
                 bottomTextColor={bottomTextColor}
                 logoPlacement={logoPlacement}
+                captionLogoSize={captionLogoSize}
               />
               <div style={{
                 marginTop: 20, 
@@ -714,6 +854,7 @@ function App() {
               bottomText={bottomText}
               bottomTextColor={bottomTextColor}
               logoPlacement={logoPlacement}
+              captionLogoSize={captionLogoSize}
             />
             
           </div>
@@ -734,6 +875,7 @@ function App() {
               quietZone={quietZone} setQuietZone={setQuietZone}
               logoImage={logoImage} setLogoImage={setLogoImage}
               logoPlacement={logoPlacement} setLogoPlacement={setLogoPlacement}
+              captionLogoSize={captionLogoSize} setCaptionLogoSize={setCaptionLogoSize}
               logoWidth={logoWidth} logoHeight={logoHeight}
               handleLogoWidth={handleLogoWidth} handleLogoHeight={handleLogoHeight}
               logoRatioLocked={logoRatioLocked} setLogoRatioLocked={setLogoRatioLocked}

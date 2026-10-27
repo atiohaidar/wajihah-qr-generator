@@ -108,6 +108,8 @@ export function generateQrSvg(options = {}) {
     textColor = bottomTextColor,
     logoPlacement = 'center',
     logoPos = logoPlacement,
+    captionLogoSize = null,
+    bottomLogoSize: customBottomLogoSize = captionLogoSize,
   } = options;
 
   const validEcLevels = ['L', 'M', 'Q', 'H'];
@@ -132,7 +134,9 @@ export function generateQrSvg(options = {}) {
   const cleanBottomText = String(bottomText || label || '').trim();
   const isBottomLogo = (logoPlacement === 'bottom' || logoPos === 'bottom') && !!logoDataUri;
   const textFontSize = Math.max(16, Math.round(canvasSize * 0.048));
-  const bottomLogoSize = isBottomLogo ? Math.max(26, Math.round(textFontSize * 1.5)) : 0;
+  const bottomLogoSize = isBottomLogo 
+    ? Math.max(16, Number(customBottomLogoSize || captionLogoSize || (Number(logoWidth) <= 80 ? logoWidth : 0) || Math.round(textFontSize * 1.5))) 
+    : 0;
   const logoGap = isBottomLogo && cleanBottomText ? Math.round(textFontSize * 0.45) : 0;
   const availableWidth = Math.max(80, canvasSize - 32 - (isBottomLogo ? (bottomLogoSize + logoGap) : 0));
   const textLines = cleanBottomText ? wrapTextSvg(cleanBottomText, availableWidth, textFontSize) : [];
@@ -327,7 +331,7 @@ export async function onRequest(context) {
   const fgColor = params.get('fgColor') || params.get('fg') || '#000000';
   const bgColor = params.get('bgColor') || params.get('bg') || '#ffffff';
   const qrStyle = params.get('qrStyle') || params.get('style') || 'squares';
-  const eyeRadius = params.get('eyeRadius') || params.get('eye') || 6;
+  const eyeRadius = params.get('eyeRadius') || params.get('borderRadius') || params.get('eye') || params.get('radius') || 10;
   const eyeColor = params.get('eyeColor') || fgColor;
   const logo = params.get('logo') || params.get('logoImage') || null;
   const logoWidth = params.get('logoWidth') || null;
@@ -339,6 +343,7 @@ export async function onRequest(context) {
   const bottomText = params.get('bottomText') || params.get('label') || '';
   const bottomTextColor = params.get('bottomTextColor') || params.get('textColor') || null;
   const logoPlacement = (params.get('logoPlacement') || params.get('logoPos') || 'center').toLowerCase();
+  const captionLogoSize = params.get('captionLogoSize') || params.get('bottomLogoSize') || null;
   const format = (params.get('format') || 'png').toLowerCase();
 
   try {
@@ -362,6 +367,7 @@ export async function onRequest(context) {
       bottomText,
       bottomTextColor,
       logoPlacement,
+      captionLogoSize,
     });
 
     if (format === 'svg') {
@@ -375,12 +381,19 @@ export async function onRequest(context) {
       });
     }
 
-    // Default to true raster PNG image
+    // Default to true raster PNG image (2x super-sampled for crystal clarity)
     const fontBuffer = getFontBuffer();
     const resvg = await Resvg.async(svg, {
       font: {
         fontBuffers: [fontBuffer],
         defaultFontFamily: 'Roboto',
+      },
+      imageRendering: 0,
+      shapeRendering: 2,
+      textRendering: 2,
+      fitTo: {
+        mode: 'zoom',
+        value: 2,
       },
     });
     const pngData = resvg.render();

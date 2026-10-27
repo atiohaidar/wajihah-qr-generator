@@ -19,7 +19,7 @@ function qrApiDevPlugin() {
             const fgColor = params.get('fgColor') || params.get('fg') || '#000000';
             const bgColor = params.get('bgColor') || params.get('bg') || '#ffffff';
             const qrStyle = params.get('qrStyle') || params.get('style') || 'squares';
-            const eyeRadius = params.get('eyeRadius') || params.get('eye') || 6;
+            const eyeRadius = params.get('eyeRadius') || params.get('borderRadius') || params.get('eye') || 6;
             const eyeColor = params.get('eyeColor') || fgColor;
             const logo = params.get('logo') || params.get('logoImage') || null;
             const logoWidth = params.get('logoWidth') || null;
@@ -31,6 +31,7 @@ function qrApiDevPlugin() {
             const bottomText = params.get('bottomText') || params.get('label') || '';
             const bottomTextColor = params.get('bottomTextColor') || params.get('textColor') || null;
             const logoPlacement = (params.get('logoPlacement') || params.get('logoPos') || 'center').toLowerCase();
+            const captionLogoSize = params.get('captionLogoSize') || params.get('bottomLogoSize') || null;
 
             const svg = generateQrSvg({
               data,
@@ -52,6 +53,7 @@ function qrApiDevPlugin() {
               bottomText,
               bottomTextColor,
               logoPlacement,
+              captionLogoSize,
             });
 
             const format = (params.get('format') || 'png').toLowerCase();
@@ -71,6 +73,13 @@ function qrApiDevPlugin() {
               font: {
                 fontBuffers: [fontBuffer],
                 defaultFontFamily: 'Roboto',
+              },
+              imageRendering: 0,
+              shapeRendering: 2,
+              textRendering: 2,
+              fitTo: {
+                mode: 'zoom',
+                value: 2,
               },
             });
             const pngData = resvg.render();
