@@ -30,6 +30,7 @@ function qrApiDevPlugin() {
             const removeBehindLogo = params.get('removeBehindLogo') !== 'false';
             const bottomText = params.get('bottomText') || params.get('label') || '';
             const bottomTextColor = params.get('bottomTextColor') || params.get('textColor') || null;
+            const logoPlacement = (params.get('logoPlacement') || params.get('logoPos') || 'center').toLowerCase();
 
             const svg = generateQrSvg({
               data,
@@ -50,6 +51,7 @@ function qrApiDevPlugin() {
               removeQrCodeBehindLogo: removeBehindLogo,
               bottomText,
               bottomTextColor,
+              logoPlacement,
             });
 
             const format = (params.get('format') || 'png').toLowerCase();

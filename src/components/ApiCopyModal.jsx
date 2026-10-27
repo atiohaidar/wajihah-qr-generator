@@ -21,6 +21,7 @@ const ApiCopyModal = ({
   eyeColor,
   bottomText,
   bottomTextColor,
+  logoPlacement = 'center',
 }) => {
   if (!isOpen) return null;
 
@@ -58,6 +59,7 @@ const ApiCopyModal = ({
     if (bgColor && bgColor !== '#ffffff') params.push(`bg=${formatColorParam(bgColor)}`);
     if (eyeColor && eyeColor !== fgColor) params.push(`eyeColor=${formatColorParam(eyeColor)}`);
     if (cleanLogo) params.push(`logo=${encodeURIComponent(cleanLogo)}`);
+    if (logoPlacement && logoPlacement !== 'center') params.push(`logoPlacement=${logoPlacement}`);
     if (qrStyle && qrStyle !== 'squares') params.push(`style=${qrStyle}`);
     if (eyeRadius && eyeRadius !== 10) params.push(`eye=${eyeRadius}`);
     if (ecLevel && ecLevel !== 'H') params.push(`ecLevel=${ecLevel}`);
@@ -70,7 +72,7 @@ const ApiCopyModal = ({
 
     return params.join('&');
   }, [
-    size, fgColor, bgColor, eyeColor, cleanLogo, qrStyle, eyeRadius,
+    size, fgColor, bgColor, eyeColor, cleanLogo, logoPlacement, qrStyle, eyeRadius,
     ecLevel, quietZone, logoWidth, logoHeight, bottomText, bottomTextColor, removeQrCodeBehindLogo
   ]);
 
@@ -287,7 +289,10 @@ const qrUrl = QR_API + encodeURIComponent(linkInvoice);
         </div>
 
         {/* Action button */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, flexWrap: 'wrap', gap: 10 }}>
+          <span style={{ fontSize: 11, color: '#95a5a6' }}>
+            QR Code is a registered trademark of DENSO WAVE INCORPORATED.
+          </span>
           <button
             type="button"
             onClick={onClose}

@@ -27,3 +27,6 @@ dist-ssr
 scratch_*
 temp.png
 QR_*.png
+*.timestamp-*.mjs
+*.timestamp-*.js
+

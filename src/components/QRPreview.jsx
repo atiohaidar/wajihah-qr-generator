@@ -42,11 +42,12 @@ const QRPreview = ({
   logoBg, logoBgWidth, logoBgHeight, logoBgPosition, logoBgX, logoBgY, logoBgObjectFit, logoBgCustomStyle,
   qrOpacity,
   bottomText = '',
-  bottomTextColor = null
+  bottomTextColor = null,
+  logoPlacement = 'center',
 }) => {
   // Hidden canvas untuk download/new tab
   const fullCanvasRef = useRef();
-  useEffect(() => {}, [value, size, fgColor, bgColor, ecLevel, quietZone, logoImage, logoWidth, logoHeight, logoOpacity, logoPadding, logoPaddingStyle, logoPaddingRadius, removeQrCodeBehindLogo, qrStyle, eyeRadius, eyeColor, enableCORS, logoBg, logoBgWidth, logoBgHeight, logoBgPosition, logoBgX, logoBgY, logoBgObjectFit, logoBgCustomStyle, qrOpacity]);
+  useEffect(() => {}, [value, size, fgColor, bgColor, ecLevel, quietZone, logoImage, logoWidth, logoHeight, logoOpacity, logoPadding, logoPaddingStyle, logoPaddingRadius, removeQrCodeBehindLogo, qrStyle, eyeRadius, eyeColor, enableCORS, logoBg, logoBgWidth, logoBgHeight, logoBgPosition, logoBgX, logoBgY, logoBgObjectFit, logoBgCustomStyle, qrOpacity, logoPlacement]);
   // Batasi panjang data untuk mencegah overflow
   const maxLength = {
     'L': 2953,
@@ -58,6 +59,8 @@ const QRPreview = ({
   const truncatedValue = value.length > (maxLength[ecLevel] || 1000) 
     ? value.substring(0, (maxLength[ecLevel] || 1000)) 
     : value;
+
+  const effectiveLogoImage = logoPlacement === 'bottom' ? null : logoImage;
     
   return (
     <div style={{marginTop: 1, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
@@ -127,7 +130,7 @@ const QRPreview = ({
             bgColor={bgColor}
             ecLevel={ecLevel}
             quietZone={quietZone}
-            logoImage={logoImage}
+            logoImage={effectiveLogoImage}
             logoWidth={logoWidth * ((previewSize || size) / size)}
             logoHeight={logoHeight * ((previewSize || size) / size)}
             logoOpacity={logoOpacity}
@@ -145,21 +148,46 @@ const QRPreview = ({
         </QRErrorBoundary>
       )}
 
-      {/* Teks di bawah QR preview */}
-      {bottomText && bottomText.trim() && (
+      {/* Teks & Logo di bawah QR preview */}
+      {((bottomText && bottomText.trim()) || (logoPlacement === 'bottom' && logoImage)) && (
         <div style={{
           marginTop: 12,
           marginBottom: 4,
-          fontSize: Math.max(14, Math.round((previewSize || size) * 0.052)),
-          fontWeight: '700',
-          fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif',
-          color: (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor && fgColor !== 'transparent' ? fgColor : '#222'),
-          textAlign: 'center',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 10,
           maxWidth: (previewSize || size),
-          wordBreak: 'break-word',
-          letterSpacing: '0.01em',
+          padding: '2px 8px',
+          boxSizing: 'border-box'
         }}>
-          {bottomText}
+          {logoPlacement === 'bottom' && logoImage && (
+            <img
+              src={logoImage}
+              alt="Logo"
+              style={{
+                width: Math.max(22, Math.round((previewSize || size) * 0.08)),
+                height: Math.max(22, Math.round((previewSize || size) * 0.08)),
+                objectFit: 'contain',
+                flexShrink: 0,
+                opacity: logoOpacity
+              }}
+            />
+          )}
+          {bottomText && bottomText.trim() && (
+            <span style={{
+              fontSize: Math.max(14, Math.round((previewSize || size) * 0.052)),
+              fontWeight: '700',
+              fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif',
+              color: (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor && fgColor !== 'transparent' ? fgColor : '#222'),
+              textAlign: (logoPlacement === 'bottom' && logoImage) ? 'left' : 'center',
+              wordBreak: 'break-word',
+              letterSpacing: '0.01em',
+              lineHeight: 1.25,
+            }}>
+              {bottomText}
+            </span>
+          )}
         </div>
       )}
 
@@ -173,7 +201,7 @@ const QRPreview = ({
             bgColor={logoBg ? "rgba(255,255,255,0)" : bgColor}
             ecLevel={ecLevel}
             quietZone={quietZone}
-            logoImage={logoImage}
+            logoImage={effectiveLogoImage}
             logoWidth={logoWidth}
             logoHeight={logoHeight}
             logoOpacity={logoOpacity}

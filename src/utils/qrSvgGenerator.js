@@ -104,6 +104,8 @@ export function generateQrSvg(options = {}) {
     label = bottomText,
     bottomTextColor = null,
     textColor = bottomTextColor,
+    logoPlacement = 'center',
+    logoPos = logoPlacement,
   } = options;
 
   const validEcLevels = ['L', 'M', 'Q', 'H'];
@@ -123,21 +125,24 @@ export function generateQrSvg(options = {}) {
   const cellSize = numSize / length;
   const offset = numQuietZone;
 
-  // Resolve bottom text with multi-line word wrapping
-  const cleanBottomText = String(bottomText || label || '').trim();
-  const textFontSize = Math.max(16, Math.round(canvasSize * 0.048));
-  const availableWidth = Math.max(100, canvasSize - 28);
-  const textLines = cleanBottomText ? wrapTextSvg(cleanBottomText, availableWidth, textFontSize) : [];
-  const lineHeight = Math.round(textFontSize * 1.35);
-  const textBlockHeight = textLines.length * lineHeight;
-  const topGap = textLines.length > 0 ? Math.round(textFontSize * 0.6) : 0;
-  const bottomGap = textLines.length > 0 ? Math.round(textFontSize * 0.8) : 0;
-  const totalBottomPadding = textLines.length > 0 ? (topGap + textBlockHeight + bottomGap) : 0;
-  const totalCanvasHeight = canvasSize + totalBottomPadding;
-
   // Resolve Logo
   const resolvedLogo = resolveLogo(logoImage);
   const logoDataUri = resolvedLogo?.dataUri || (typeof logoImage === 'string' && (logoImage.startsWith('data:') || logoImage.startsWith('http') || logoImage.startsWith('/')) ? logoImage : null);
+
+  const cleanBottomText = String(bottomText || label || '').trim();
+  const isBottomLogo = (logoPlacement === 'bottom' || logoPos === 'bottom') && !!logoDataUri;
+  const textFontSize = Math.max(16, Math.round(canvasSize * 0.048));
+  const bottomLogoSize = isBottomLogo ? Math.max(26, Math.round(textFontSize * 1.5)) : 0;
+  const logoGap = isBottomLogo && cleanBottomText ? Math.round(textFontSize * 0.45) : 0;
+  const availableWidth = Math.max(80, canvasSize - 32 - (isBottomLogo ? (bottomLogoSize + logoGap) : 0));
+  const textLines = cleanBottomText ? wrapTextSvg(cleanBottomText, availableWidth, textFontSize) : [];
+  const lineHeight = Math.round(textFontSize * 1.35);
+  const textBlockHeight = textLines.length * lineHeight;
+  const totalContentHeight = Math.max(bottomLogoSize, textBlockHeight);
+  const topGap = (textLines.length > 0 || isBottomLogo) ? Math.round(textFontSize * 0.65) : 0;
+  const bottomGap = (textLines.length > 0 || isBottomLogo) ? Math.round(textFontSize * 0.8) : 0;
+  const totalBottomPadding = (textLines.length > 0 || isBottomLogo) ? (topGap + totalContentHeight + bottomGap) : 0;
+  const totalCanvasHeight = canvasSize + totalBottomPadding;
 
   const defaultLogoSize = numSize * 0.28;
   const dWidthLogo = Number(logoWidth) > 0 ? Number(logoWidth) : defaultLogoSize;
@@ -162,6 +167,7 @@ export function generateQrSvg(options = {}) {
   };
 
   const isBehindLogo = (row, col) => {
+    if (isBottomLogo) return false;
     if (!removeQrCodeBehindLogo || !logoDataUri) return false;
     const paddingInCells = Math.ceil(Number(logoPadding || 0.1) / cellSize);
     const snappedPadding = paddingInCells * cellSize;
@@ -254,8 +260,8 @@ export function generateQrSvg(options = {}) {
     svgContent += `<path d="${centerPath}" fill="${actualEyeColor}" />\n`;
   });
 
-  // 4. Logo in Center
-  if (logoDataUri) {
+  // 4. Logo in Center (hanya jika bukan mode logo di samping caption)
+  if (logoDataUri && !isBottomLogo) {
     const logoX = (dxLogo + offset).toFixed(2);
     const logoY = (dyLogo + offset).toFixed(2);
     const w = dWidthLogo.toFixed(2);
@@ -265,14 +271,36 @@ export function generateQrSvg(options = {}) {
     svgContent += `<image href="${logoDataUri}" x="${logoX}" y="${logoY}" width="${w}" height="${h}" opacity="${op}" preserveAspectRatio="xMidYMid meet" />\n`;
   }
 
-  // 5. Bottom Text Label (Multi-line word wrapped)
-  if (textLines.length > 0) {
+  // 5. Bottom Text Label & Logo di Bawah
+  if (isBottomLogo || textLines.length > 0) {
     const actualTextColor = normalizeColor(bottomTextColor || textColor || actualFg, actualFg);
-    const startY = canvasSize + topGap + Math.round(textFontSize * 0.82);
-    textLines.forEach((line, idx) => {
-      const lineY = (startY + (idx * lineHeight)).toFixed(2);
-      svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${lineY}" text-anchor="middle" font-family="Roboto, 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.2">${escapeXml(line)}</text>\n`;
-    });
+    const op = Number(logoOpacity) || 1;
+
+    if (isBottomLogo) {
+      const avgCharWidth = textFontSize * 0.58;
+      const maxLineLength = textLines.reduce((max, line) => Math.max(max, line.length), 0);
+      const approxTextWidth = textLines.length > 0 ? maxLineLength * avgCharWidth : 0;
+      const totalRowWidth = bottomLogoSize + (textLines.length > 0 ? (logoGap + approxTextWidth) : 0);
+      const startX = Math.max(16, Math.round((canvasSize - totalRowWidth) / 2));
+      const logoY = (canvasSize + topGap + (totalContentHeight - bottomLogoSize) / 2).toFixed(2);
+
+      svgContent += `<image href="${logoDataUri}" x="${startX.toFixed(2)}" y="${logoY}" width="${bottomLogoSize}" height="${bottomLogoSize}" opacity="${op}" preserveAspectRatio="xMidYMid meet" />\n`;
+
+      if (textLines.length > 0) {
+        const textX = (startX + bottomLogoSize + logoGap).toFixed(2);
+        const startY = canvasSize + topGap + ((totalContentHeight - textBlockHeight) / 2) + Math.round(textFontSize * 0.82);
+        textLines.forEach((line, idx) => {
+          const lineY = (startY + (idx * lineHeight)).toFixed(2);
+          svgContent += `<text x="${textX}" y="${lineY}" text-anchor="start" font-family="Roboto, 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.2">${escapeXml(line)}</text>\n`;
+        });
+      }
+    } else {
+      const startY = canvasSize + topGap + Math.round(textFontSize * 0.82);
+      textLines.forEach((line, idx) => {
+        const lineY = (startY + (idx * lineHeight)).toFixed(2);
+        svgContent += `<text x="${(canvasSize / 2).toFixed(2)}" y="${lineY}" text-anchor="middle" font-family="Roboto, 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-weight="700" font-size="${textFontSize}" fill="${actualTextColor}" letter-spacing="0.2">${escapeXml(line)}</text>\n`;
+      });
+    }
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>

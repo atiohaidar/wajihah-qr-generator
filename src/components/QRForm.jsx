@@ -36,7 +36,9 @@ const QRForm = ({
   handleLogoBgWidth, handleLogoBgHeight,
   // Bottom text under QR code
   bottomText, setBottomText,
-  bottomTextColor, setBottomTextColor
+  bottomTextColor, setBottomTextColor,
+  // Logo placement ('center' | 'bottom')
+  logoPlacement = 'center', setLogoPlacement
 }) => {
   // Simpan ukuran logo sebelum toggle background
   const prevLogoSize = useRef({ width: logoWidth, height: logoHeight });
@@ -541,7 +543,89 @@ const QRForm = ({
                     />
                     Tampilkan Logo di QR
                   </label>
-                  <div style={{ fontSize: 13, color: '#e67e22', marginBottom: 8, marginTop: -4 }}>
+
+                  {!!logoImage && (
+                    <div style={{ marginBottom: 16, marginTop: 10 }}>
+                      <label style={{ ...labelStyle, fontSize: 13, marginBottom: 6 }}>
+                        Posisi Tampilan Logo:
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <div
+                          onClick={() => setLogoPlacement && setLogoPlacement('center')}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: 8,
+                            border: `2px solid ${logoPlacement === 'center' ? '#3498db' : '#e0e0e0'}`,
+                            background: logoPlacement === 'center' ? '#ebf5fb' : '#ffffff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            transition: 'all 0.2s ease',
+                            boxShadow: logoPlacement === 'center' ? '0 2px 6px rgba(52, 152, 219, 0.15)' : 'none'
+                          }}
+                        >
+                          <span style={{ fontSize: 20 }}>🎯</span>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: logoPlacement === 'center' ? '#2980b9' : '#333' }}>
+                              Di Tengah QR
+                            </div>
+                            <div style={{ fontSize: 11, color: '#777', marginTop: 2 }}>
+                              Default di tengah modul
+                            </div>
+                          </div>
+                        </div>
+
+                        <div
+                          onClick={() => setLogoPlacement && setLogoPlacement('bottom')}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: 8,
+                            border: `2px solid ${logoPlacement === 'bottom' ? '#3498db' : '#e0e0e0'}`,
+                            background: logoPlacement === 'bottom' ? '#ebf5fb' : '#ffffff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            transition: 'all 0.2s ease',
+                            boxShadow: logoPlacement === 'bottom' ? '0 2px 6px rgba(52, 152, 219, 0.15)' : 'none'
+                          }}
+                        >
+                          <span style={{ fontSize: 20 }}>🏷️</span>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: logoPlacement === 'bottom' ? '#2980b9' : '#333' }}>
+                              Di Kiri Tulisan Caption
+                            </div>
+                            <div style={{ fontSize: 11, color: '#777', marginTop: 2 }}>
+                              [Logo] + [Tulisan] di bawah
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {logoPlacement === 'bottom' && (
+                        <div style={{
+                          marginTop: 8,
+                          fontSize: 12,
+                          color: '#27ae60',
+                          background: '#eafaf1',
+                          padding: '8px 12px',
+                          borderRadius: 6,
+                          lineHeight: 1.4,
+                          border: '1px solid #c3e6cb'
+                        }}>
+                          ✨ <b>Mode Bersih & Rapi:</b> Logo ditaruh di sebelah kiri tulisan caption di bawah QR. QR code di tengah jadi utuh tanpa bolong, sehingga sangat mudah di-scan!
+                          {!bottomText && (
+                            <div style={{ color: '#d35400', marginTop: 4, fontWeight: 500 }}>
+                              💡 Masukkan form <b>Tulisan di Bawah QR Code</b> di atas agar teks bersanding di sebelah kanan logo.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: 13, color: '#e67e22', marginBottom: 8, marginTop: 4 }}>
                     Jika logo masih bermasalah, coba pilih logo lain lalu kembali ke logo yang diinginkan.
                   </div>
                   {logoLoading && (

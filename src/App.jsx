@@ -22,6 +22,7 @@ function App() {
   const [showApiModal, setShowApiModal] = useState(false);
   const [bottomText, setBottomText] = useState(getInitial('bottomText', ''));
   const [bottomTextColor, setBottomTextColor] = useState(getInitial('bottomTextColor', ''));
+  const [logoPlacement, setLogoPlacement] = useState(getInitial('logoPlacement', 'center'));
 
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [qrOpacity, setQrOpacity] = useState(getInitial('qrOpacity', 1));
@@ -100,6 +101,7 @@ function App() {
   useEffect(() => { localStorage.setItem('qrform_logoBg', logoBg); }, [logoBg]);
   useEffect(() => { localStorage.setItem('qrform_bottomText', bottomText); }, [bottomText]);
   useEffect(() => { localStorage.setItem('qrform_bottomTextColor', bottomTextColor); }, [bottomTextColor]);
+  useEffect(() => { localStorage.setItem('qrform_logoPlacement', logoPlacement); }, [logoPlacement]);
 
   // Sync logo natural size
   useEffect(() => {
@@ -126,6 +128,111 @@ function App() {
       }
     };
   }, [logoImage, size]);
+
+  // Helper untuk membuat canvas gabungan yang berisi QR dan caption/logo bawah
+  const getExportCanvas = async (sourceCanvas) => {
+    if (!sourceCanvas) return null;
+    const hasText = !!(bottomText && bottomText.trim());
+    const hasBottomLogo = logoPlacement === 'bottom' && !!logoImage;
+
+    if (!hasText && !hasBottomLogo) {
+      return sourceCanvas;
+    }
+
+    const merged = document.createElement('canvas');
+    const fontSize = Math.max(16, Math.round(sourceCanvas.width * 0.05));
+    const fontStr = `700 ${fontSize}px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif`;
+
+    const tempCtx = merged.getContext('2d');
+    tempCtx.font = fontStr;
+
+    const bottomLogoSize = hasBottomLogo ? Math.max(26, Math.round(fontSize * 1.5)) : 0;
+    const logoGap = hasBottomLogo && hasText ? Math.round(fontSize * 0.45) : 0;
+    const maxTextWidth = Math.max(80, sourceCanvas.width - 28 - (hasBottomLogo ? (bottomLogoSize + logoGap) : 0));
+
+    const lines = [];
+    if (hasText) {
+      const words = bottomText.trim().split(/\s+/);
+      let curLine = '';
+      for (const w of words) {
+        const testLine = curLine ? curLine + ' ' + w : w;
+        if (tempCtx.measureText(testLine).width > maxTextWidth && curLine) {
+          lines.push(curLine);
+          curLine = w;
+        } else {
+          curLine = testLine;
+        }
+      }
+      if (curLine) lines.push(curLine);
+    }
+
+    const lineHeight = Math.round(fontSize * 1.35);
+    const textBlockHeight = lines.length * lineHeight;
+    const totalContentHeight = Math.max(bottomLogoSize, textBlockHeight);
+    const topGap = Math.round(fontSize * 0.65);
+    const bottomGap = Math.round(fontSize * 0.8);
+    const totalPadding = topGap + totalContentHeight + bottomGap;
+
+    merged.width = sourceCanvas.width;
+    merged.height = sourceCanvas.height + totalPadding;
+    const ctx = merged.getContext('2d');
+
+    if (bgColor && bgColor !== 'transparent') {
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, merged.width, merged.height);
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(sourceCanvas, 0, 0);
+
+    let loadedLogo = null;
+    if (hasBottomLogo) {
+      try {
+        loadedLogo = await new Promise((resolve) => {
+          const img = new window.Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = logoImage;
+        });
+      } catch {}
+    }
+
+    ctx.font = fontStr;
+    ctx.fillStyle = (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor || '#000000');
+    ctx.textBaseline = 'middle';
+
+    if (hasBottomLogo && loadedLogo) {
+      let maxLineWidth = 0;
+      lines.forEach(l => {
+        const w = ctx.measureText(l).width;
+        if (w > maxLineWidth) maxLineWidth = w;
+      });
+
+      const totalRowWidth = bottomLogoSize + (lines.length > 0 ? (logoGap + maxLineWidth) : 0);
+      const startX = Math.max(14, Math.round((merged.width - totalRowWidth) / 2));
+      const logoY = Math.round(sourceCanvas.height + topGap + (totalContentHeight - bottomLogoSize) / 2);
+
+      ctx.drawImage(loadedLogo, startX, logoY, bottomLogoSize, bottomLogoSize);
+
+      if (lines.length > 0) {
+        ctx.textAlign = 'left';
+        const textX = startX + bottomLogoSize + logoGap;
+        const startY = sourceCanvas.height + topGap + ((totalContentHeight - textBlockHeight) / 2) + Math.round(fontSize * 0.55);
+        lines.forEach((line, idx) => {
+          ctx.fillText(line, textX, startY + (idx * lineHeight));
+        });
+      }
+    } else if (lines.length > 0) {
+      ctx.textAlign = 'center';
+      const startY = sourceCanvas.height + topGap + Math.round(fontSize * 0.55);
+      lines.forEach((line, idx) => {
+        ctx.fillText(line, merged.width / 2, startY + (idx * lineHeight));
+      });
+    }
+
+    return merged;
+  };
 
   // Sync rasio saat user mengubah width/height
   const handleLogoBgWidth = (w) => {
@@ -326,6 +433,7 @@ function App() {
                 qrOpacity={qrOpacity}
                 bottomText={bottomText}
                 bottomTextColor={bottomTextColor}
+                logoPlacement={logoPlacement}
               />
               <div style={{
                 marginTop: 20, 
@@ -419,7 +527,7 @@ function App() {
                   fontSize: 15,
                   boxShadow: '0 2px 8px rgba(52, 152, 219, 0.15)'
                 }}
-                onClick={() => {
+                onClick={async () => {
                   setShowDownloadModal(false);
                   // Download QR
                   const qrId = customId && customId.trim() ? customId : 'qr-code-canvas';
@@ -438,58 +546,7 @@ function App() {
                     }
                   }
                   if (canvas) {
-                    let exportCanvas = canvas;
-                    if (bottomText && bottomText.trim()) {
-                      const merged = document.createElement('canvas');
-                      const fontSize = Math.max(16, Math.round(canvas.width * 0.05));
-                      const fontStr = `700 ${fontSize}px "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif`;
-                      
-                      const tempCtx = merged.getContext('2d');
-                      tempCtx.font = fontStr;
-                      const maxTextWidth = canvas.width - 28;
-                      const words = bottomText.trim().split(/\s+/);
-                      const lines = [];
-                      let curLine = '';
-                      for (const w of words) {
-                        const testLine = curLine ? curLine + ' ' + w : w;
-                        if (tempCtx.measureText(testLine).width > maxTextWidth && curLine) {
-                          lines.push(curLine);
-                          curLine = w;
-                        } else {
-                          curLine = testLine;
-                        }
-                      }
-                      if (curLine) lines.push(curLine);
-
-                      const lineHeight = Math.round(fontSize * 1.35);
-                      const textBlockHeight = lines.length * lineHeight;
-                      const topGap = Math.round(fontSize * 0.6);
-                      const bottomGap = Math.round(fontSize * 0.8);
-                      const totalPadding = topGap + textBlockHeight + bottomGap;
-
-                      merged.width = canvas.width;
-                      merged.height = canvas.height + totalPadding;
-                      const ctx = merged.getContext('2d');
-                      if (bgColor && bgColor !== 'transparent') {
-                        ctx.fillStyle = bgColor;
-                        ctx.fillRect(0, 0, merged.width, merged.height);
-                      }
-                      ctx.imageSmoothingEnabled = true;
-                      ctx.imageSmoothingQuality = 'high';
-                      ctx.drawImage(canvas, 0, 0);
-
-                      ctx.font = fontStr;
-                      ctx.fillStyle = (bottomTextColor && bottomTextColor.trim()) ? bottomTextColor : (fgColor || '#000000');
-                      ctx.textAlign = 'center';
-                      ctx.textBaseline = 'middle';
-
-                      const startY = canvas.height + topGap + Math.round(fontSize * 0.55);
-                      lines.forEach((line, idx) => {
-                        ctx.fillText(line, merged.width / 2, startY + (idx * lineHeight));
-                      });
-
-                      exportCanvas = merged;
-                    }
+                    const exportCanvas = await getExportCanvas(canvas);
                     const link = document.createElement('a');
                     link.download = 'qr-code.png';
                     link.href = exportCanvas.toDataURL('image/png');
@@ -554,7 +611,7 @@ function App() {
                     gap: '8px',
                     flex: window.innerWidth < 768 ? '1' : 'initial'
                   }}
-                  onClick={() => {
+                  onClick={async () => {
                     // Buka tab baru dengan QR code
                     const qrId = customId && customId.trim() ? customId : 'qr-code-canvas';
                     const fullCanvas = document.getElementById(qrId + '-full');
@@ -572,10 +629,11 @@ function App() {
                       }
                     }
                     if (canvas) {
+                      const exportCanvas = await getExportCanvas(canvas);
                       const imageWindow = window.open('');
                       imageWindow.document.write('<html><head><title>QR Code Preview</title>');
                       imageWindow.document.write('</head><body style="margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f8f9fa;">');
-                      imageWindow.document.write(`<img src="${canvas.toDataURL('image/png')}" style="max-width: 100%; height: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">`);
+                      imageWindow.document.write(`<img src="${exportCanvas.toDataURL('image/png')}" style="max-width: 100%; height: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">`);
                       imageWindow.document.write('</body></html>');
                     }
                   }}
@@ -655,6 +713,7 @@ function App() {
               eyeColor={eyeColor}
               bottomText={bottomText}
               bottomTextColor={bottomTextColor}
+              logoPlacement={logoPlacement}
             />
             
           </div>
@@ -674,6 +733,7 @@ function App() {
               ecLevel={ecLevel} setEcLevel={setEcLevel}
               quietZone={quietZone} setQuietZone={setQuietZone}
               logoImage={logoImage} setLogoImage={setLogoImage}
+              logoPlacement={logoPlacement} setLogoPlacement={setLogoPlacement}
               logoWidth={logoWidth} logoHeight={logoHeight}
               handleLogoWidth={handleLogoWidth} handleLogoHeight={handleLogoHeight}
               logoRatioLocked={logoRatioLocked} setLogoRatioLocked={setLogoRatioLocked}
@@ -706,9 +766,14 @@ function App() {
           
         </div>
         
-        <div style={{textAlign: 'center', marginTop: '40px', color: '#6c757d', fontSize: '14px'}}>
-        QR Generator for Wajihah Telkom University | Made with Github Copilot XD | ke <a href="https://github.com/TioHaidarHanif/wajihah-qr-generator" target="_blank" rel="noreferrer" style={{color:'#3498db', textDecoration:'none'}}>sini</a> aja klo ada apa2.
-        </div>
+        <footer style={{textAlign: 'center', marginTop: '48px', paddingBottom: '24px', color: '#6c757d', fontSize: '13px', lineHeight: '1.6'}}>
+          <div>
+            QR Generator for Wajihah Telkom University | Made with Github Copilot XD | ke <a href="https://github.com/TioHaidarHanif/wajihah-qr-generator" target="_blank" rel="noreferrer" style={{color:'#3498db', textDecoration:'none'}}>sini</a> aja klo ada apa2.
+          </div>
+          <div style={{ fontSize: '11px', color: '#95a5a6', marginTop: '6px' }}>
+            QR Code is a registered trademark of DENSO WAVE INCORPORATED.
+          </div>
+        </footer>
     </div>
   );
 }

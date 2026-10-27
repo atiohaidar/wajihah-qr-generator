@@ -45,4 +45,5 @@ Aplikasi web untuk membuat QR code dengan logo dan pengaturan tampilan yang muda
 - `public/` — Aset statis & logo
 
 ---
-© 2025 QR Generator For Wajihah Telkom University
+© 2025 QR Generator For Wajihah Telkom University  
+*QR Code is a registered trademark of DENSO WAVE INCORPORATED.*
