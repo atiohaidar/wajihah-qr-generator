@@ -62,6 +62,9 @@ const QRPreview = ({
     : value;
 
   const effectiveLogoImage = logoPlacement === 'bottom' ? null : logoImage;
+  // 1x1 transparent pixel untuk canvas ekspor agar cutout logo tetap dibuat tanpa merender logo buram ganda
+  const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+  const exportLogoImage = (logoPlacement === 'center' && logoImage) ? TRANSPARENT_PIXEL : effectiveLogoImage;
     
   return (
     <div style={{marginTop: 1, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
@@ -206,7 +209,7 @@ const QRPreview = ({
             bgColor={logoBg ? "rgba(255,255,255,0)" : bgColor}
             ecLevel={ecLevel}
             quietZone={quietZone}
-            logoImage={effectiveLogoImage}
+            logoImage={exportLogoImage}
             logoWidth={logoWidth}
             logoHeight={logoHeight}
             logoOpacity={logoOpacity}

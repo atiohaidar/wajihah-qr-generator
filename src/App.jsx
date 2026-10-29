@@ -273,25 +273,61 @@ function App() {
 
     // Jika mode logo tengah, gambar ulang logo di atas canvas ekspor dengan resolusi ultra-tajam (menghilangkan efek kotak-kotak/pecah)
     if (hasCenterLogo && loadedLogo) {
-      const scaledLogoW = Math.round((logoWidth || 100) * exportScale);
-      const scaledLogoH = Math.round((logoHeight || 100) * exportScale);
-      const logoX = Math.round(((baseWidth * exportScale) - scaledLogoW) / 2);
-      const logoY = Math.round(((baseHeight * exportScale) - scaledLogoH) / 2);
+      // Hitung skala akurat dari koordinat QR logis ke canvas ekspor (memperhitungkan devicePixelRatio & quietZone)
+      const numSize = Number(size || 350);
+      const numQuiet = Number(quietZone !== undefined ? quietZone : 10);
+      const logicalCanvasSize = numSize + (2 * numQuiet);
+      const canvasScale = baseWidth / logicalCanvasSize;
+      const totalScale = canvasScale * exportScale;
+
+      const dWidthLogo = Number(logoWidth) > 0 ? Number(logoWidth) : (numSize * 0.2);
+      const dHeightLogo = Number(logoHeight) > 0 ? Number(logoHeight) : dWidthLogo;
+
+      const scaledLogoW = Math.round(dWidthLogo * totalScale);
+      const scaledLogoH = Math.round(dHeightLogo * totalScale);
+      const qrMergedWidth = Math.round(baseWidth * exportScale);
+      const qrMergedHeight = Math.round(baseHeight * exportScale);
+      const logoX = Math.round((qrMergedWidth - scaledLogoW) / 2);
+      const logoY = Math.round((qrMergedHeight - scaledLogoH) / 2);
+
+      const scaledPadding = Math.round((Number(logoPadding) || 0) * totalScale);
+      const padX = logoX - scaledPadding;
+      const padY = logoY - scaledPadding;
+      const padW = scaledLogoW + (2 * scaledPadding);
+      const padH = scaledLogoH + (2 * scaledPadding);
+
+      // Bersihkan background area logo untuk mencegah logo lama bertumpuk/numpuk (ghosting)
+      ctx.save();
+      if (!bgColor || bgColor === 'transparent') {
+        ctx.clearRect(padX, padY, padW, padH);
+      } else {
+        ctx.fillStyle = bgColor;
+        if (logoPaddingStyle === 'circle') {
+          ctx.beginPath();
+          ctx.ellipse(padX + padW / 2, padY + padH / 2, padW / 2, padH / 2, 0, 0, 2 * Math.PI);
+          ctx.fill();
+        } else {
+          const padRadius = Math.round((Number(logoPaddingRadius) || 0) * totalScale);
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(padX, padY, padW, padH, padRadius);
+          } else {
+            ctx.rect(padX, padY, padW, padH);
+          }
+          ctx.fill();
+        }
+      }
+      ctx.restore();
 
       // Gambar background/padding logo jika ada
-      if (logoPadding && logoPadding > 0) {
-        const scaledPadding = Math.round(logoPadding * exportScale);
-        const padX = logoX - scaledPadding;
-        const padY = logoY - scaledPadding;
-        const padW = scaledLogoW + (2 * scaledPadding);
-        const padH = scaledLogoH + (2 * scaledPadding);
+      if (scaledPadding > 0) {
         ctx.save();
         ctx.fillStyle = (bgColor && bgColor !== 'transparent') ? bgColor : '#ffffff';
         ctx.beginPath();
         if (logoPaddingStyle === 'circle') {
           ctx.ellipse(padX + padW / 2, padY + padH / 2, padW / 2, padH / 2, 0, 0, 2 * Math.PI);
         } else {
-          const padRadius = Math.round((logoPaddingRadius || 0) * exportScale);
+          const padRadius = Math.round((Number(logoPaddingRadius) || 0) * totalScale);
           if (typeof ctx.roundRect === 'function') {
             ctx.roundRect(padX, padY, padW, padH, padRadius);
           } else {
